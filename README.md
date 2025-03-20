@@ -1,15 +1,20 @@
-# srm- Social relations model
+# srm
 
-The proposed srm package proposes tools for analyzing nodal dyadic relationships via the
-social relations model. It breaks down and analyzes networks into nodal and dyadic dependencies and allows users to understand actor, partner, and dyadic effects in network data.
+The proposed srm package proposes tools for analyzing nodal dyadic relationships via the social relations model. It breaks down and analyzes networks into nodal and dyadic dependencies and allows users to understand actor, partner, and dyadic effects in network data.
 
 ## Installation
 
-# install devtools
-
-      if (!require(devtools)) {
+    if (!require(devtools)) {
         install.packages("devtools")
       }
       library(devtools)
 
       install_github("netify-dev/srm")
+      
+      
+## Usage
+
+
+## Contributors 
+
+Cassy Dorff (Vanderbilt University) and Shahryar Minhas (Michigan State University)
