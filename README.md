@@ -5,4 +5,11 @@ social relations model. It breaks down and analyzes networks into nodal and dyad
 
 ## Installation
 
-devtools::install_github("netify-dev/srm")
+# install devtools
+
+      if (!require(devtools)) {
+        install.packages("devtools")
+      }
+      library(devtools)
+
+      install_github("netify-dev/srm")
