@@ -144,7 +144,7 @@ srm_plot <- function(mat, type = c("actor", "partner", "dyadic"), n = 10, time =
     # Create the faceted plot
     p <- ggplot2::ggplot(combined_data, ggplot2::aes(x = effect, y = reorder(id, effect), fill = color)) +
       ggplot2::geom_col() +
-      ggplot2::facet_wrap(~ period, scales = "free_y") +
+      ggplot2::facet_wrap(~ period, scales = "free") +
       ggplot2::scale_fill_identity() +
       ggplot2::theme_minimal() +
       ggplot2::theme(
@@ -152,7 +152,10 @@ srm_plot <- function(mat, type = c("actor", "partner", "dyadic"), n = 10, time =
         panel.grid.major.y = ggplot2::element_blank(),
         panel.grid.major.x = ggplot2::element_blank(),
         panel.grid.minor.x = ggplot2::element_blank(),
-        axis.text.y = ggplot2::element_text(size = 7)
+        axis.text.y = ggplot2::element_text(size = 7),
+        axis.text.x = ggplot2::element_text(size = 7, angle = 0),  # Adjust size and remove angle
+        plot.margin = ggplot2::unit(c(0.3, 0.5, 0.3, 0.5), "cm"),  # Add some margin
+        panel.spacing = ggplot2::unit(1, "cm")  # Increase space between facets
       ) +
       ggplot2::xlab("") +
       ggplot2::ylab("")

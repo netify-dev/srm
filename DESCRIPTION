@@ -1,9 +1,7 @@
 Package: srm
 Title: SRM: Social Relations Model Toolkit
 Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+Authors@R: c(person("Cassy", "Dorff", email = "cassy.dorff@vanderbilt.edu", role = c("aut")), person("Shahryar", "Minhas", email = "minhassh@msu.edu", role = c("aut", "cre")), person("Tosin", "Salau", email = "salaubol@msu.edu", role = c("ctb")))
 Description: srm allows users to get nodal and dyadic relationships from networks.
 License: MIT + file LICENSE
 Encoding: UTF-8
