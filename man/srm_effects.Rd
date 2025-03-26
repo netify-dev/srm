@@ -4,16 +4,78 @@
 \alias{srm_effects}
 \title{This function calculates actor, partner,and unique effects via srm framework}
 \usage{
-srm_effects(x, type = c("actor", "partner", "unique"))
+srm_effects(mat, type = c("actor", "partner", "unique"), time = NULL)
 }
 \arguments{
-\item{x}{can be a df or matrix. if df- converted to matrix by netify}
+\item{mat}{A matrix or list of matrices}
 
-\item{type}{A character string specifying the type of effect to calculate.}
+\item{type}{A string specifying the type of effect to calculate.}
+
+\item{time}{A string specifying the time point(s) to calculate the effect}
 }
 \value{
-A vector of actor/partner/unique effects
+A vector or list (if longitudinal) of actor/partner/unique effects
 }
 \description{
 This function calculates actor, partner,and unique effects via srm framework
+}
+\examples{
+# Simple example 
+test_matrix <- matrix(c(0, 1, 2, 2, 0, 1, 1, 2, 0), nrow=3, ncol=3)
+
+rownames(test_matrix) <- colnames(test_matrix) <- c("A", "B", "C")
+actor_effect <- srm_effects(test_matrix, type = "actor")
+
+\dontrun{
+#Example taken from GED data
+#subsetted to Mexico with resulting df as a dyadic dataframe
+
+UCDP_GED <- read_excel(paste0(pth,"GEDEvent_v24_1.xlsx"))
+mexico <- UCDP_GED |>
+filter(country=='Mexico')
+#turn dyadic df to a network object using netify using civ death as weight
+#so we have a matrix for crossectional and list for longitudinal
+
+#cross-sectional
+
+mex_network_civ <- netify(
+dyad_data = mexico,
+actor1 = 'side_a',
+actor2 = 'side_b',
+weight = 'deaths_civilians',
+symmetric = TRUE,
+sum_dyads = TRUE,
+diag_to_NA = TRUE,
+missing_to_zero = TRUE
+)
+
+#longitudinal
+mex_network_long <- netify(
+  dyad_data = mexico,
+  actor1 = 'side_a',
+  actor2 = 'side_b',
+  time = 'year',      
+  weight = 'deaths_civilians',
+  symmetric = TRUE,
+  sum_dyads = TRUE,
+  diag_to_NA = TRUE,
+  missing_to_zero = TRUE
+ )  
+
+# Calculate actor effects
+actor_effects <- srm_effects(mex_network_civ, type = "actor")
+
+# Calculate partner effects 
+partner_effects <- srm_effects(mex_network_civ, type = "partner")
+
+# Calculate unique effects
+unique_effects <- srm_effects(mex_network_civ, type = "unique")
+
+#Calculate actor effects for a specific time point
+actor_2015 <- srm_effects(mex_network_long, type = "actor", time = "2015")
+
+#Calculate actor effects for  specific time points
+yrs <- c("2015", "2016", "2017")
+actor_long <- srm_effects(mex_network_long, type = "unique", time = yrs)
+}
 }

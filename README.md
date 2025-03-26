@@ -17,4 +17,4 @@ The proposed srm package proposes tools for analyzing nodal dyadic relationships
 
 ## Contributors 
 
-Cassy Dorff (Vanderbilt University) and Shahryar Minhas (Michigan State University)
+Cassy Dorff (Vanderbilt University), Shahryar Minhas (Michigan State University), Tosin Salau (Michigan State University)
