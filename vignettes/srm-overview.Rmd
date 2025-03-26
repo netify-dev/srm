@@ -1,0 +1,228 @@
+---
+title: "srm-Overview: Social Relations Models for Network Analysis"
+author: "Cassy Dorff, Shahryar Minhas, and Tosin Salau"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{srm-Overview: Social Relations Models for Network Analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Package Overview
+This vignette provides an overview of the `srm` package, which provides tools for estimating social relations models for network data. It breaks down and analyzes networks into nodal and dyadic dependencies and allows users to understand actor, partner, and dyadic effects in network data. 
+
+`What users can do:`
+
+  (1) Users are able to identify the most active actors in the network-both         senders and receivers patterns
+  
+  (2) Users can identify overall network patterns
+  
+  (3) Users can generate summary statistics for the network data
+
+ 
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "",
+  fig.width = 6,
+  fig.height = 4,
+  dpi = 200,
+  out.width = "100%",
+  fig.align = "center",
+  dev = "png" 
+)
+
+```
+
+
+## Install and load Packages
+```{r setup, eval=TRUE, warning=FALSE, message=FALSE, results='hide'}
+
+# Install required packages if not already installed
+if(!'devtools' %in% rownames(installed.packages())){
+  install.packages('devtools', repos='https://cloud.r-project.org')
+}
+if(!'netify' %in% rownames(installed.packages())){
+  install.packages('netify', repos='https://cloud.r-project.org')
+}
+if(!'tidyverse' %in% rownames(installed.packages())){
+  install.packages('tidyverse', repos='https://cloud.r-project.org')
+}
+if(!'ggplot2' %in% rownames(installed.packages())){
+  install.packages('ggplot2', repos='https://cloud.r-project.org')
+}
+
+# Install the srm package from GitHub if not already installed
+if(!'srm' %in% rownames(installed.packages())){
+  devtools::install_github("netify-dev/srm")
+}
+
+# Load all packages
+library(devtools)
+library(netify)
+library(tidyverse)
+library(ggplot2)
+library(srm)
+```
+
+## Prepare Data
+
+We will create a sample dataset to demonstrate the how to use the `srm` package. The dataset is a subset of actors in ACLED data and contains information on conflict actors in Nigeria.
+
+```{r, echo=FALSE}
+
+# create sample data
+set.seed(6886)
+sample_actors <- c(
+  "Tiv Ethnic Militia (Nigeria)", 
+  "Fulani Ethnic Militia (Nigeria)",
+  "Gov Forces of Nigeria", 
+  "Pastoralists (Nigeria)", 
+  "Kwala Ethnic Militia (Nigeria)",
+  "Jukun Ethnic Militia (Nigeria)",
+  "Igbo Ethnic Militia (Nigeria)",
+  "Hausa Ethnic Militia (Nigeria)",
+  "Ichen Ethnic Militia (Nigeria)",
+  "Kuteb Ethnic Militia (Nigeria)",
+  "Lafia Ethnic Militia (Nigeria)",
+  "Agatu Ethnic Militia (Nigeria)"
+)
+                  
+nig = data.frame(
+  country = rep("Nigeria", 200),
+  actor1 = sample(sample_actors, 200, replace = TRUE),
+  actor2 = sample(sample_actors, 200, replace = TRUE),
+  year = sample(c(2001, 2005, 2010, 2013, 2015, 2018, 2020), 200, replace = TRUE)
+)
+
+```
+
+
+We will make use of the `netify` package to make a network object from sample data. We will create 2 network objects, one for cross-sectional data and the other for longitudinal data as examples for this vignette. 
+
+```{r, warning=FALSE, message=FALSE}
+# cross-sectional
+nig_net_short <- netify::netify(
+  dyad_data = nig,
+  actor1 = 'actor1',
+  actor2 = 'actor2',
+  symmetric = TRUE,
+  sum_dyads = TRUE,
+  diag_to_NA = TRUE,
+  missing_to_zero = TRUE
+)
+
+#longitudinal
+nig_net_long <- netify::netify(
+  dyad_data = nig,
+  actor1 = 'actor1',
+  actor2 = 'actor2',
+  time = 'year',
+  symmetric = TRUE,
+  sum_dyads = TRUE,
+  diag_to_NA = TRUE,
+  missing_to_zero = TRUE
+)
+  
+```
+
+
+## Summary Statistics
+
+Now that we have our network objects, we can analyze relationships in the network via the `srm` package. Lets begin by generating summary statistics for the network data. We would look at the rowmeans and actor partner covariance for the cross-sectional data of the network data. 
+
+
+```{r}
+
+#calculate rowmeans
+srm_stats(nig_net_short, type= "rowmeans")
+
+#calculate actor partner covariance
+srm_stats(nig_net_short, type = "actor_partner_cov")
+
+```
+
+
+Lets make use of the `time` argument and look at the rowmean for the longitudinal data of the network. We see we get a list of rowmeans for the years 2001, 2013, and 2020 for each actor in the network. 
+
+```{r}
+
+#subset to particular years
+yrs= c("2001", "2013", "2020")
+
+srm_stats(nig_net_long, type = "colmeans", time = yrs)
+
+```
+
+## SRM Effects
+
+We can also analyze the actor, partner, and unique effects in the network data using the `srm_effects.` function. We would look at the actor effects for the cross-sectional data of the network. 
+
+```{r}
+
+nig_actor = srm_effects(nig_net_short, type = "actor")
+print(nig_actor)
+
+```
+
+We can also look at the unique effects as well. The resulting output is a matrix of the unique effects of each actor on the other actors in the network. We will not display the output here beause of the size.  
+
+```{r}
+nig_unique = srm_effects(nig_net_short, type = "unique")
+```
+
+Similarly, we can do the same for the longitudinal data. We would look at the partner effects for the years 2001, 2013, and 2020 of the nig_net_long network. The function returns a list of matrices showing partner effects for each year. We will not display the output here beause of the size.  
+
+NOTE: For undirected networks, the partner effect is the same as the actor effect. put is a matrix of the unique effects of each actor on the other actors in the network. 
+
+```{r}
+nig_actor_long = srm_effects(nig_net_long, type = "actor", time = yrs)
+```
+
+## Visualization
+
+We might want to visualize the actor, partner, or dyadic effects in the network data. We can do this using the `srm_plot` function. The actor/partner effect plots show actors sorted by the absolute magnitude of their effects, with positive effects in blue and negative effects in red.  Actors with strong effects in either direction (highly positive or highly negative) will appear in the plot. The default number of actors to show is the top 10. Users can change this by setting the `n` argument in the `srm_plot` function.
+
+**Things to note:**
+
+  (1) Users need to put in results from the `srm_effects` function as input to the `srm_plot` function. 
+  
+  (2) For undirected networks, the partner effect is the same as the actor effect so users are advised to use the `type = actor` argument when plotting if working with symmetric data.
+
+
+We would take a look at the actor effects for the cross-sectional data of the network. 
+
+```{r}
+
+#include the actor effects from the srm_effects function
+srm_plot(nig_actor, type = "actor", n=9)
+
+```
+
+
+We can also look at the dyadic effects for the cross-sectional data of the network. When users supply dyadic effect, the function returns a heatmap of the dyadic effects in the network data. Similarly, users can set the `n` argument to specify the number of actors to show in the plot and positive effects are in blue and negative effects in red. Default is the top 10 actors. 
+
+
+```{r, fig.width=8, fig.height=6, dpi=100, dev="png"}
+
+#include the unique effects from the srm_effects function
+srm_plot(nig_unique, type = "dyadic", n=12)
+
+```
+
+We can also do the same for the longitudinal data. We can take a look at the actor effects for the years 2001, 2013, and 2020 of the nig_net_long network. To do so, we will set `facet=TRUE` for the srm_plot function to compare visualizations across time. Similarly, we can set the `n` argument to specify the number of actors to show in the plot.
+
+```{r}
+
+# include the actor effects from the srm_effects function
+
+srm_plot(nig_actor_long, type = "actor", facet = TRUE, time = yrs, n = 6)
+
+
+```
+
+
+## Conclusion
+
+The srm package provides a comprehensive toolkit for social relations model analysis, allowing researchers to decompose network effects into actor, partner, and unique components. This vignette demonstrated basic functionality and a real-world application to conflict data.
