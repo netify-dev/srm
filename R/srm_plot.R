@@ -130,8 +130,8 @@ srm_plot <- function(mat, type = c("actor", "partner", "dyadic"), n = 10, time =
       temp_data <- temp_data[order(abs(temp_data$effect), decreasing = TRUE), ]
       temp_data <- temp_data[1:min(n, nrow(temp_data)), ]
       
-      # neg and pos effects
-      temp_data$color <- ifelse(temp_data$effect > 0, "blue", "red")
+      # Grayscale for effects
+      temp_data$color <- ifelse(temp_data$effect > 0, "#252525", "#737373")
       
       # Combine with main df
       if (is.null(combined_data)) {
@@ -144,7 +144,7 @@ srm_plot <- function(mat, type = c("actor", "partner", "dyadic"), n = 10, time =
     # Create the faceted plot
     p <- ggplot2::ggplot(combined_data, ggplot2::aes(x = effect, y = reorder(id, effect), fill = color)) +
       ggplot2::geom_col() +
-      ggplot2::facet_wrap(~ period, scales = "free") +
+      ggplot2::facet_wrap(~ period, scales = "free", ncol = 2) +
       ggplot2::scale_fill_identity() +
       ggplot2::theme_minimal() +
       ggplot2::theme(
@@ -153,9 +153,11 @@ srm_plot <- function(mat, type = c("actor", "partner", "dyadic"), n = 10, time =
         panel.grid.major.x = ggplot2::element_blank(),
         panel.grid.minor.x = ggplot2::element_blank(),
         axis.text.y = ggplot2::element_text(size = 7),
-        axis.text.x = ggplot2::element_text(size = 7, angle = 0),  # Adjust size and remove angle
-        plot.margin = ggplot2::unit(c(0.3, 0.5, 0.3, 0.5), "cm"),  # Add some margin
-        panel.spacing = ggplot2::unit(1, "cm")  # Increase space between facets
+        axis.text.x = ggplot2::element_text(size = 7, angle = 45, hjust = 1),
+        plot.margin = ggplot2::unit(c(0.3, 0.5, 0.3, 0.5), "cm"),
+        panel.spacing = ggplot2::unit(1, "cm"),
+        strip.text = ggplot2::element_text(color = "white", size = 10),
+        strip.background = ggplot2::element_rect(fill = "grey30", color = NA)
       ) +
       ggplot2::xlab("") +
       ggplot2::ylab("")
@@ -194,8 +196,8 @@ srm_plot <- function(mat, type = c("actor", "partner", "dyadic"), n = 10, time =
       n <- min(n, nrow(ggdata))
       ggdata <- ggdata[1:n, ]
       
-      #neg and pos effects
-      ggdata$color <- ifelse(ggdata$effect > 0, "blue", "red")
+      # Grayscale for effects
+      ggdata$color <- ifelse(ggdata$effect > 0, "#252525", "#737373")
       
       # Create bar plot
       ggplot2::ggplot(ggdata, ggplot2::aes(x = effect, y = reorder(id, effect), fill = color)) +
@@ -231,11 +233,11 @@ srm_plot <- function(mat, type = c("actor", "partner", "dyadic"), n = 10, time =
       ggdata <- reshape2::melt(x_filtered)
       colnames(ggdata) <- c("actor", "partner", "effect")
       
-      # heatmap using geom_tile()
+      # heatmap using geom_tile() with grayscale
       ggplot2::ggplot(ggdata, ggplot2::aes(x = actor, y = partner, fill = effect)) +
         ggplot2::geom_tile() +
         ggplot2::ggtitle(names(mat)[i]) +
-        ggplot2::scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0) +
+        ggplot2::scale_fill_gradient2(low = "#f7f7f7", mid = "white", high = "#252525", midpoint = 0) +
         ggplot2::theme_minimal() +
         ggplot2::theme(
           axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
