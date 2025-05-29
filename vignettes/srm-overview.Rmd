@@ -4,7 +4,7 @@ author: "Cassy Dorff, Shahryar Minhas, and Tosin Salau"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{srm-Overview: Social Relations Models for Network Analysis}
+  %\VignetteIndexEntry{srm-overview: Social Relations Models for Network Analysis}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
