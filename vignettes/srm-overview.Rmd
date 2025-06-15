@@ -4,7 +4,7 @@ author: "Cassy Dorff, Shahryar Minhas, and Tosin Salau"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{srm-overview: Social Relations Models for Network Analysis}
+  %\VignetteIndexEntry{Social Relations Models for Network Analysis}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -15,15 +15,15 @@ This vignette provides an overview of the `srm` package, which provides tools fo
 
 **What users can do:**
 
-(1) **Identify the most active actors in the network** - both senders and receivers patterns. Users can identify which actors are more active than expected after accounting for overall network structure and partner characteristics.
+(1) **Identify the most active actors in the network** - both in terms of senders and receivers patterns. Users can identify which actors are more active than expected after accounting for overall network structure and partner characteristics.
 
 (2) **Identify overall network patterns** where users can separate systematic actor behaviors from relationship-specific effects.
 
-(3) **Generate specific summary statistics for the network data** that calculates neabs and covariances that can reveal whether active actors are also active recievers
+(3) **Generate specific summary statistics for the network data** that calculates covariances to can reveal whether active actors are also active receivers.
 
-(4) **Create  visualizations** that separate actor behaviors from relationship-specific effects.
+(4) **Create  visualizations** to visualize actor behaviors from their relationship-specific patterns.
 
-**In comparison to `netify`**, which provides general network statistics and visualizations, the srm package helps users break down network relationships allowing for deeper analysis. With `srm`, users are able to identify which actors are more or less active than typical and tells us why those connections are stronger or weaker than expected. While `netify` focuses on overall network patterns, srm centers on explaining the individual behaviors and relationships that drive those patterns.
+**In comparison to `netify`**, which provides general network statistics and visualizations, the srm package helps users break down network relationships allowing for deeper analysis. With `srm`, users are able to identify which actors are more or less active than typical and helps users explore why, relationally, some connections are stronger or weaker than expected. While `netify` focuses on overall network patterns, srm centers on explaining the individual behaviors and relationships that drive those patterns.
 
 
 ```{r, include = FALSE}
@@ -73,13 +73,11 @@ library(srm)
 
 ## Prepare Data
 
-We will make use of data from ATOP (Alliance Treaty Obligations and Provisions) to demonstrate the how to use the `srm` package. The data can be downloaded at http://www.atopdata.org. For this tutorial, we have selected the atop5_1dy dataset and focus on military security consultations between countries from 2010 to 2018 where at least one partner is from the following 11 East Asian countries:  Japan, South Korea, Philippines, Thailand, Singapore, Malaysia, Indonesia, India, China, Vietnam, and North Korea.
+We will make use of data from ATOP (Alliance Treaty Obligations and Provisions) to demonstrate the how to use the `srm` package. The data can be downloaded at http://www.atopdata.org. For this tutorial, we have selected the `atop5_1dy` dataset and focus on military security consultations between countries from 2010 to 2018 where at least one partner is from the following 11 East Asian countries:  Japan, South Korea, Philippines, Thailand, Singapore, Malaysia, Indonesia, India, China, Vietnam, and North Korea.
 
 
 ```{r, echo=FALSE}
-
 data("atop_EA")  # Load dataset
-
 ```
 
 
@@ -149,11 +147,8 @@ Now that we have our network objects, we can analyze relationships in the networ
 
 
 ```{r}
-
 #calculate rowmeans
 srm_stats(atop_EA_short, type= "rowmeans")
-
-
 ```
 
 
@@ -167,12 +162,9 @@ srm_stats(atop_EA_short, type = "actor_partner_cov")
 
 The actor-partner covariance of 0.65 shows a positive relationship that countries with high military consultation obligations are also receiving these consultation agreements in the network.
 
-
-
 Lets make use of the `time` argument and look at the colmeans for the longitudinal data of the network. We see we get a list of colmeans for the years 2001, 2013, and 2020 for each actor in the network. 
 
 ```{r}
-
 #subset to particular years
 yrs= c("2010", "2013", "2015", "2018")
 
@@ -201,10 +193,8 @@ We would look at the actor effects for the cross-sectional data of the network.
 
 
 ```{r}
-
 EA_actor = srm_effects(atop_EA_short, type = "actor")
 print(EA_actor)
-
 ```
 
 The actor effects show how much an actor deviates from the network average in security consultation pacts. From this example, we see that China has the highest positive actor effect (+2.92), meaning it engages in security consultation pacts far more than the general network average. Other East Asian countries such as Thailand, Japan, and Korea have negative effects (around -0.52), suggesting they participate in security consultation pacts below the network average.
@@ -234,7 +224,6 @@ EA_actor_long = srm_effects(atop_EA_long, type = "actor", time = yrs)
 ```
 
 
-
 ## Visualization
 
 We might want to visualize the actor, partner, or dyadic effects in the network data. We can do this using the `srm_plot` function. The actor/partner effect plots show actors sorted by the absolute magnitude of their effects, with positive effects in blue and negative effects in red.  Actors with strong effects in either direction (highly positive or highly negative) will appear in the plot. The default number of actors to show is the top 10. Users can change this by setting the `n` argument in the `srm_plot` function.
@@ -245,7 +234,6 @@ We might want to visualize the actor, partner, or dyadic effects in the network 
   
   (2) For undirected networks, the partner effect is the same as the actor effect so users are advised to use the `type = actor` argument when plotting if working with symmetric data.
 
-
 We would take a look at the actor effects for the cross-sectional data of the network. 
 
 ```{r}
@@ -255,8 +243,6 @@ srm_plot(EA_actor, type = "actor", n=9)
 ```
 
 The srm plot for actor effects show positive effects which are in black (right side) and negative effects which are in gray (left side). They show actors that engage in military consultation obligations above or below the network average. China has the highest positive effect, indicating it engages in military consultation obligations significantly more than the network average. Countries such as Turkmenistan have the strongest negative effects, showing they engage in military consultation obligations below the network average
-
-
 
 We can also look at the dyadic effects for the cross-sectional data of the network. When users supply dyadic effect, the function returns a heatmap of the dyadic effects in the network data. Similarly, users can set the `n` argument to specify the number of actors to show in the plot and positive effects are in blue and negative effects in red. Default is the top 10 actors. 
 
@@ -270,8 +256,6 @@ srm_plot(EA_unique, type = "dyadic", n=12)
 
 The srm plot for dyadic effects shows a heatmap of the unique relationship between actor pairs in military consultation obligations after controlling for each actors's general tendencies. Darker cells indicate relationships that are stronger-than-expected, while light gray cells show relationships that are weaker-than-expected, and white cells represent relationships that align with predicted patterns. For example, the USA has strong military consultation relationships with Japan, Korea, and Thailand beyond what their general activity levels would predict. Most cells here are white showing many bilateral relationships on military consultation obligations are similar to what we would expect.
 
-
-
 We can also do the same for the longitudinal data. We can take a look at the actor effects for the years 2001, 2013, and 2020 of the nig_net_long network. To do so, we will set `facet=TRUE` for the srm_plot function to compare visualizations across time. Similarly, we can set the `n` argument to specify the number of actors to show in the plot.
 
 ```{r}
@@ -280,12 +264,11 @@ srm_plot(EA_actor_long, type = "actor", facet = TRUE, time = yrs, n = 8)
 
 ```
 
-The srm plot for longitudinal actor effects shows how actors' military consultation obligation patterns evolved over time. The actor effects are sorted by absolute value, with positive effects in dark bars and negative effects in light gray bars. Across the time periods, China remains the country with the highest positive actor effects (dark bars) showing growth from 2010. This is similar to India. The USA and Russia show reduced positive effects in later years but still maintain relatively stable above-average military consultation obligation patterns. Other countries with gray bars show negative actor effects suggesting they engage in military consultation obligations below what would be expected from the network average.
-
+The `srm` plot for longitudinal actor effects shows how actors' military consultation obligation patterns evolved over time. The actor effects are sorted by absolute value, with positive effects in dark bars and negative effects in light gray bars. Across the time periods, China remains the country with the highest positive actor effects (dark bars) showing growth from 2010. This is similar to India. The USA and Russia show reduced positive effects in later years but still maintain relatively stable above-average military consultation obligation patterns. Other countries with gray bars show negative actor effects suggesting they engage in military consultation obligations below what would be expected from the network average.
 
 ## Conclusion
 
-The srm package provides a comprehensive toolkit for social relations model analysis, allowing researchers to decompose network effects into actor, partner, and unique components. This vignette demonstrated basic functionality and a real-world application to conflict data.
+The `srm` package provides a comprehensive toolkit for social relations model analysis, allowing researchers to decompose network effects into actor, partner, and unique components. This vignette demonstrated basic functionality and a real-world application to conflict data.
 
 
 **References**:
