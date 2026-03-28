@@ -1,0 +1,71 @@
+url: https://netify-dev.github.io/srm/
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left:  [methodology, articles, reference]
+    right: [search, github]
+  components:
+    methodology:
+      text: Methodology
+      href: articles/methodology.html
+
+articles:
+  - title: "Getting Started"
+    navbar: ~
+    contents:
+    - srm-overview
+    - pipeline
+    - bipartite
+  - title: internal
+    contents:
+    - methodology
+
+reference:
+  - title: "Model Fitting"
+    desc: "Fit Social Relations Models to network data"
+    contents:
+    - srm
+    - srm_effects
+    - srm_stats
+
+  - title: "S3 Methods"
+    desc: "Standard R methods for srm objects"
+    contents:
+    - print.srm
+    - summary.srm
+    - print.summary.srm
+    - plot.srm
+
+  - title: "Inference"
+    desc: "Permutation-based significance testing"
+    contents:
+    - permute_srm
+    - print.srm_permtest
+    - plot.srm_permtest
+
+  - title: "Longitudinal Analysis"
+    desc: "Track effects over time"
+    contents:
+    - srm_trends
+    - srm_trend_plot
+    - srm_stability
+
+  - title: "Visualization"
+    desc: "Additional plotting functions"
+    contents:
+    - srm_plot
+
+  - title: "Simulation"
+    desc: "Generate synthetic network data"
+    contents:
+    - sim_srm
+
+  - title: "Datasets"
+    desc: "Example datasets"
+    contents:
+    - atop_EA
+    - classroom
+    - small_council
+    - trade_net

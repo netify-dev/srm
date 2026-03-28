@@ -2,7 +2,7 @@
 % Please edit documentation in R/srm_stats.R
 \name{srm_stats}
 \alias{srm_stats}
-\title{This function calculates srm statistics}
+\title{Calculate SRM summary statistics}
 \usage{
 srm_stats(
   mat,
@@ -12,67 +12,53 @@ srm_stats(
 )
 }
 \arguments{
-\item{mat}{A matrix or list of matrices.}
+\item{mat}{A square numeric matrix (or list of square matrices for
+longitudinal data). Diagonal values are set to zero internally. NAs
+are replaced with zero. Must not be an \code{srm} object (statistics are
+already in \code{summary(fit)$variance_table}).}
 
-\item{type}{A string specifying the type of statistic to calculate.}
+\item{type}{One of:
+\itemize{
+\item \code{"rowmeans"}: row means (average out-ties per actor).
+\item \code{"colmeans"}: column means (average in-ties per actor).
+\item \code{"totalmeans"}: grand mean of off-diagonal entries.
+\item \code{"actor_var"}: actor (sender) variance component.
+\item \code{"partner_var"}: partner (receiver) variance component.
+\item \code{"unique_var"}: unique dyadic variance component.
+\item \code{"relationship_cov"}: generalized reciprocity covariance.
+\item \code{"actor_partner_cov"}: covariance between sending and receiving.
+}
 
-\item{time}{A string specifying the time point(s) to calculate.}
+Variance and covariance components require n >= 4 actors. For n <= 3,
+\code{NA} is returned.}
+
+\item{time}{Optional character vector of time-point names to subset
+when \code{mat} is a named list.}
 }
 \value{
-A vector or list (if longitudinal) of calculated network stats
+A named numeric vector (for descriptive statistics) or scalar
+(for variance components). For a list input, a list of such values.
+See \code{\link[=srm]{srm()}} for the unified interface.
 }
 \description{
-This function calculates srm statistics
+Computes descriptive statistics and variance/covariance components from a
+round-robin network using the Social Relations Model framework. Requires
+a square (unipartite) adjacency matrix; for bipartite networks, use
+\code{\link[=srm]{srm()}} instead.
 }
 \examples{
-# Simple example 
-test_matrix <- matrix(c(0, 1, 2, 2, 0, 1, 1, 2, 0), nrow=3, ncol=3)
+# simple inline example
+test_matrix = matrix(c(0, 1, 2, 2, 0, 1, 1, 2, 0), nrow = 3, ncol = 3)
+rownames(test_matrix) = colnames(test_matrix) = c("A", "B", "C")
+actor_totalmeans = srm_stats(test_matrix, type = "totalmeans")
 
-rownames(test_matrix) <- colnames(test_matrix) <- c("A", "B", "C")
-actor_totalmeans <- srm_stats(test_matrix, type = "totalmeans")
+data(classroom)
+srm_stats(classroom, type = "rowmeans")
+srm_stats(classroom, type = "actor_var")
+srm_stats(classroom, type = "actor_partner_cov")
 
-\dontrun{
-#Example taken from GED data
-#subsetted to Mexico with resulting df as a dyadic dataframe
+# longitudinal
+data(trade_net)
+srm_stats(trade_net, type = "colmeans", time = c("2015", "2019"))
 
-UCDP_GED <- read_excel(paste0(pth,"GEDEvent_v24_1.xlsx"))
-mexico <- UCDP_GED |>
-filter(country=='Mexico')
-#turn dyadic df to a network object using netify using civ death as weight
-#so we have a matrix for crossectional and list for longitudinal
-
-#cross-sectional
-
-mex_network_civ <- netify(
-dyad_data = mexico,
-actor1 = 'side_a',
-actor2 = 'side_b',
-weight = 'deaths_civilians',
-symmetric = TRUE,
-sum_dyads = TRUE,
-diag_to_NA = TRUE,
-missing_to_zero = TRUE
-)
-
-#longitudinal
-mex_network_long <- netify(
-  dyad_data = mexico,
-  actor1 = 'side_a',
-  actor2 = 'side_b',
-  time = 'year',      
-  weight = 'deaths_civilians',
-  symmetric = TRUE,
-  sum_dyads = TRUE,
-  diag_to_NA = TRUE,
-  missing_to_zero = TRUE
- )  
-
-# Calculate srm stats for rowmeans
-actor_mean <- srm_stats(mex_network_civ, type = "rowmeans")
-
-# Calculate srm stats for a specific time point
-
-actor_mean <- srm_stats(mex_network_long, type = "partner_var", time = "2015")
-
-}
 }

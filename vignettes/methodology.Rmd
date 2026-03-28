@@ -1,0 +1,187 @@
+---
+title: "SRM Methodology: Mathematical Framework"
+author: "Cassy Dorff, Shahryar Minhas, and Tosin Salau"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{SRM Methodology: Mathematical Framework}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "",
+  fig.width = 6,
+  fig.height = 4,
+  dpi = 150,
+  out.width = "100%",
+  fig.align = "center"
+)
+```
+
+## Overview
+
+The Social Relations Model (SRM) was originally developed by Kenny and La Voie (1984) for round-robin designs in psychology, where every individual both rates and is rated by every other individual. The framework decomposes observed relational data into additive components that capture systematic patterns at the actor level and relationship-specific patterns at the dyadic level.
+
+The `srm` package implements the SRM decomposition for network data, extending its applicability to political science, international relations, and other domains where relational data arises naturally.
+
+## The Model
+
+For a directed network with $n$ actors, let $X_{ij}$ denote the observed tie from actor $i$ to actor $j$. The SRM decomposes this as:
+
+$$X_{ij} = \mu + a_i + b_j + g_{ij}$$
+
+where:
+
+- $\mu$ is the **grand mean** of the network
+- $a_i$ is the **actor effect** for individual $i$ (sender tendency)
+- $b_j$ is the **partner effect** for individual $j$ (receiver tendency)
+- $g_{ij}$ is the **unique (dyadic) effect** for the $i \to j$ relationship
+
+### Interpretation
+
+- **Actor effect** ($a_i$): How much actor $i$ sends ties above or below the network average, after adjusting for partner characteristics. A high positive $a_i$ means actor $i$ is an unusually active sender.
+
+- **Partner effect** ($b_j$): How much actor $j$ receives ties above or below the network average, after adjusting for actor characteristics. A high positive $b_j$ means actor $j$ is an unusually attractive receiver.
+
+- **Unique effect** ($g_{ij}$): The component of the $i \to j$ tie that cannot be explained by $i$'s general sending tendency or $j$'s general receiving tendency. This captures relationship-specific dynamics.
+
+## Estimation
+
+### Effect Estimates
+
+The SRM effects are estimated using the following formulas. Let:
+
+- $X_{i \cdot} = \frac{1}{n-1} \sum_{j \neq i} X_{ij}$ (row mean for actor $i$)
+- $X_{\cdot j} = \frac{1}{n-1} \sum_{i \neq j} X_{ij}$ (column mean for actor $j$)
+- $\bar{X} = \frac{1}{n(n-1)} \sum_{i \neq j} X_{ij}$ (grand mean)
+
+The estimated actor effect is:
+
+$$\hat{a}_i = \frac{(n-1)^2}{n(n-2)} X_{i \cdot} + \frac{n-1}{n(n-2)} X_{\cdot i} - \frac{n-1}{n-2} \bar{X}$$
+
+The estimated partner effect is:
+
+$$\hat{b}_j = \frac{(n-1)^2}{n(n-2)} X_{\cdot j} + \frac{n-1}{n(n-2)} X_{j \cdot} - \frac{n-1}{n-2} \bar{X}$$
+
+The estimated unique effect is simply the residual:
+
+$$\hat{g}_{ij} = X_{ij} - \hat{a}_i - \hat{b}_j - \bar{X}$$
+
+Note that these formulas include a correction for the finite-sample bias that arises because row and column means are not independent.
+
+### Variance Components
+
+The SRM framework also estimates variance components that summarize the importance of each level of the decomposition.
+
+**Unique variance** ($\sigma^2_g$) and **relationship covariance** ($\sigma_{gg'}$) are estimated from the unique effects:
+
+$$q_1 = \sum_{i \neq j} \left(\frac{\hat{g}_{ij} + \hat{g}_{ji}}{2}\right)^2, \quad q_2 = \frac{1}{2}\sum_{i \neq j} \left(\hat{g}_{ij} - \hat{g}_{ji}\right)^2$$
+
+$$\hat{\sigma}^2_g = \frac{1}{2}\left(\frac{q_1}{d_5} + \frac{q_2}{d_4}\right), \quad \hat{\sigma}_{gg'} = \frac{1}{2}\left(\frac{q_1}{d_5} - \frac{q_2}{d_4}\right)$$
+
+where $d_4 = (n-1)(n-2)$ and $d_5 = (n-1)(n-2)/2 - 1$.
+
+**Actor variance** ($\sigma^2_a$):
+
+$$\hat{\sigma}^2_a = \frac{\sum_i \hat{a}_i^2}{n-1} - \frac{\hat{\sigma}^2_g (n-1)}{n(n-2)} - \frac{\hat{\sigma}_{gg'}}{n(n-2)}$$
+
+**Partner variance** ($\sigma^2_b$):
+
+$$\hat{\sigma}^2_b = \frac{\sum_j \hat{b}_j^2}{n-1} - \frac{\hat{\sigma}^2_g (n-1)}{n(n-2)} - \frac{\hat{\sigma}_{gg'}}{n(n-2)}$$
+
+**Actor-partner covariance** ($\sigma_{ab}$):
+
+$$\hat{\sigma}_{ab} = \frac{\sum_i \hat{a}_i \hat{b}_i}{n-1} - \frac{\hat{\sigma}_{gg'} (n-1)}{n(n-2)} - \frac{\hat{\sigma}^2_g}{n(n-2)}$$
+
+### Variance Partition
+
+A key summary of the SRM is the **variance partition**, which expresses the proportion of total network variation attributable to each component:
+
+$$\text{% Actor} = \frac{\hat{\sigma}^2_a}{\hat{\sigma}^2_a + \hat{\sigma}^2_b + \hat{\sigma}^2_g} \times 100$$
+
+This tells us whether network structure is primarily driven by differences in sending behavior (actor effects), receiving behavior (partner effects), or relationship-specific factors (unique effects).
+
+### Negative variance estimates
+
+Because the SRM uses method-of-moments estimation, variance component estimates are not constrained to be non-negative. With small networks (roughly $n < 15$), sampling variability can produce negative estimates for $\hat{\sigma}^2_a$ or $\hat{\sigma}^2_b$. A negative estimate does not mean the true variance is negative --- it means the data do not contain enough information to estimate that component reliably. When computing variance partitions, negative estimates are clipped to zero before calculating percentages.
+
+Negative estimates are most common when one component dominates (e.g., nearly all variation is dyadic) and the network is small. With larger networks, the estimators stabilize and negative values become rare. If you encounter negative variance estimates, treat the decomposition as exploratory rather than definitive.
+
+## Example
+
+We illustrate with the `classroom` dataset, a 12-student directed friendship network at North Shore High (inspired by *Mean Girls*) where students rate each other. The data is designed to reflect the movie's social dynamics: Regina is the Queen Bee (most popular but stingiest rater), Damian is the warmest friend, and Gretchen is liked least despite being a Plastic. Because the network is directed, senders and receivers can have different roles.
+
+```{r}
+library(srm)
+data(classroom)
+
+fit = srm(classroom)
+summary(fit)
+```
+
+Actor effects account for 42% of the variation (students differ in how generously they rate), partner effects for 26% (some students are rated higher by everyone), and unique dyadic effects for 32% (specific pairwise relationships). The dominance of actor variance reflects the wide range of sender tendencies at North Shore High --- from Damian's warmth to Regina's selectivity. The positive relationship covariance (0.69) indicates reciprocity: when one student rates another highly, the favor tends to be returned. The negative actor-partner covariance (-0.25) captures the Queen Bee dynamic: generous raters are not the most popular, and the most popular student (Regina) rates others the lowest.
+
+```{r}
+plot(fit, type = "variance")
+```
+
+The variance partition plot shows that sender tendencies are the largest source of variation, consistent with the strong personality differences in the movie. Receiver popularity and relationship-specific effects each contribute about a quarter to a third of the total.
+
+```{r}
+plot(fit, type = "actor", n = 8)
+```
+
+The actor effect plot reveals which students deviate most from the network average. Damian (+2.36) is the warmest rater, followed by Karen (+1.05) and Cady (+1.01). Regina (-2.64) rates others far below average, followed by Shane (-0.89). Because this is a directed network, these actor effects are distinct from the partner effects, which capture who *receives* the most.
+
+## Permutation Inference
+
+Because the sampling distributions of SRM variance components are not straightforward, the `srm` package provides permutation-based inference via `permute_srm()`. The procedure:
+
+1. Compute the observed variance components from the original matrix.
+2. Repeatedly permute rows and columns of the matrix independently, destroying actor/partner structure while preserving the marginal distribution.
+3. Recompute variance components on each permuted matrix.
+4. Compare observed values to the null distribution to obtain p-values.
+
+```{r}
+pt = permute_srm(classroom, n_perms = 500, seed = 6886)
+print(pt)
+```
+
+The permutation test confirms that actor variance and partner variance are both significantly larger than expected under random relabeling ($p < 0.05$). The relationship covariance is also significant ($p < 0.05$), confirming genuine reciprocity in the friendship ratings. The unique variance is not significant against the null ($p = 1.0$) because permutation preserves overall variability but destroys structure. The actor-partner covariance is not significant ($p > 0.8$), meaning the Queen Bee pattern is not strong enough to rule out chance at this sample size.
+
+## Bipartite Extension
+
+For two-mode (bipartite) networks where senders and receivers are from different populations (e.g., countries sending aid to organizations), the decomposition simplifies because there are no self-ties and no reciprocity structure:
+
+$$X_{ij} = \mu + a_i + b_j + g_{ij}$$
+
+Effects are estimated as simple deviations from the grand mean: $\hat{a}_i = \bar{X}_{i\cdot} - \bar{X}$ and $\hat{b}_j = \bar{X}_{\cdot j} - \bar{X}$. Because row and column actors are distinct populations, the bias corrections on the effect estimates themselves (needed in the unipartite case) do not apply. However, the variance components are bias-corrected using two-way ANOVA degrees of freedom: $\hat{\sigma}^2_g = \text{SS}_{\text{resid}} / [(n_r - 1)(n_c - 1)]$, with actor and partner variances adjusted for the noise contribution ($\hat{\sigma}^2_a = \text{Var}(\hat{a}) - \hat{\sigma}^2_g / n_c$, and similarly for partners). Only actor variance, partner variance, and unique variance are computed; covariance components (reciprocity, actor-partner) are not defined when senders and receivers come from different sets.
+
+## Longitudinal Analysis
+
+When network data is observed over multiple time periods, the `srm` package fits the SRM separately for each period and provides tools for tracking how effects evolve:
+
+- `srm_trends()`: Extracts effects over time as a tidy data frame.
+- `srm_trend_plot()`: Visualizes temporal trajectories.
+- `srm_stability()`: Computes correlations between consecutive time points to assess rank-order stability.
+
+```{r}
+data(trade_net)
+fit_long = srm(trade_net)
+srm_stability(fit_long, type = "actor")
+```
+
+The low correlations between consecutive periods (0.08 and 0.20) indicate that countries' relative sending positions shift substantially across time. Unlike the ATOP data where the network is mostly static, the simulated trade data has independently generated effects at each period, so low stability is expected.
+
+## References
+
+Dorff, Cassy, and Michael D. Ward. (2013). Networks, Dyads, and the Social Relations Model. *Political Science Research Methods* 1(2):159-178.
+
+Dorff, Cassy, and Shahryar Minhas. (2017). When Do States Say Uncle? Network Dependence and Sanction Compliance. *International Interactions* 43(4):563-588.
+
+Kenny, David A., and Lawrence La Voie. (1984). The Social Relations Model. *Advances in Experimental Social Psychology* 18:141-182.
+
+Warner, Rebecca M., David A. Kenny, and Michael Stoto. (1979). A New Round Robin Analysis of Variance for Social Interaction Data. *Journal of Personality and Social Psychology* 37:1742-1757.

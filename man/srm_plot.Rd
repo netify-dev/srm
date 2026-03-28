@@ -13,79 +13,44 @@ srm_plot(
 )
 }
 \arguments{
-\item{mat}{A matrix or list of matrices from srm_effects()}
+\item{mat}{An effect matrix or list of effect matrices from
+\code{\link[=srm_effects]{srm_effects()}}. Must not be an \code{srm} object.}
 
-\item{type}{A string specifying the type of effect to plot: "actor", "partner", or "dyadic"}
+\item{type}{One of \code{"actor"}, \code{"partner"}, or \code{"dyadic"}. For bipartite
+networks, \code{"dyadic"} selects top rows and columns independently.}
 
-\item{n}{The number of top actors/partners to plot}
+\item{n}{Maximum number of actors/partners to display, selected by
+absolute magnitude (default 10).}
 
-\item{time}{A string specifying the time point to plot}
+\item{time}{Optional character vector of time-point names to subset
+when \code{mat} is a named list.}
 
-\item{facet}{A logical indicating whether to facet multiple matrices}
+\item{facet}{If \code{TRUE} and \code{mat} is a list, facet actor/partner plots
+across time. Dyadic heatmaps are returned as separate plots instead.}
 }
 \value{
-A ggplot object or list of ggplot objects
+A \code{ggplot} object, or a list of \code{ggplot} objects for
+unfaceted longitudinal input.
 }
 \description{
-This function creates visualizations of social relations model effects including
-actor effects, partner effects, and dyadic effects.
+Visualizes SRM effects computed by \code{\link[=srm_effects]{srm_effects()}}. Actor and partner
+effects produce horizontal bar charts sorted by absolute magnitude
+(dark bars = positive, gray bars = negative). Unique (dyadic) effects
+produce a heatmap on a diverging color scale: blue cells indicate
+weaker-than-expected ties, white cells are close to predicted, and
+dark cells indicate stronger-than-expected ties.
+}
+\details{
+For the unified interface (plot directly from an \code{srm} object), use
+\code{\link[=plot.srm]{plot.srm()}} instead.
 }
 \examples{
-# Simple example with a basic matrix
-test_matrix <- matrix(c(0, 1, 2, 2, 0, 1, 1, 2, 0), nrow=3, ncol=3)
-rownames(test_matrix) <- colnames(test_matrix) <- c("A", "B", "C")
-actor_effects <- srm_effects(test_matrix, type = "actor")
-srm_plot(actor_effects, type = "actor", n = 3)
+# actor effect bar plot
+data(classroom)
+actor_eff = srm_effects(classroom, type = "actor")
+srm_plot(actor_eff, type = "actor", n = 8)
 
-\dontrun{
-# Example taken from GED data
-# subsetted to Mexico with resulting df as a dyadic dataframe
-
-UCDP_GED <- read_excel(paste0(pth,"GEDEvent_v24_1.xlsx"))
-mexico <- UCDP_GED |>
-filter(country=='Mexico')
-
-# turn dyadic df to a network object using netify using civ death as weight
-# so we have a matrix for crossectional and list for longitudinal
-
-# cross-sectional
-
-mex_network_civ <- netify(
-dyad_data = mexico,
-actor1 = 'side_a',
-actor2 = 'side_b',
-weight = 'deaths_civilians',
-symmetric = TRUE,
-sum_dyads = TRUE,
-diag_to_NA = TRUE,
-missing_to_zero = TRUE
-)
-
-# longitudinal
-mex_network_long <- netify(
-  dyad_data = mexico,
-  actor1 = 'side_a',
-  actor2 = 'side_b',
-  time = 'year',      
-  weight = 'deaths_civilians',
-  symmetric = TRUE,
-  sum_dyads = TRUE,
-  diag_to_NA = TRUE,
-  missing_to_zero = TRUE
- )  
-
-# plot actor effects
-# before running, matrix should be from srm_effects
-
-actor_effect <- srm_effects(mex_network_long, type = "actor")
-
-actor_plot <- srm_plot(actor_effect, type = "actor", n = 5)
-
-# plot dyadic effects
-dyadic_effect <- srm_effects(mex_network_long, type = "unique")
-dyadic_plot <- srm_plot(dyadic_effect, type = "dyadic", time= "2015")
-
-# for longitudinal, can use facet argument for actor/partner effect
-actor_plot_facet <- srm_plot(actor_effect, type = "actor", facet=TRUE)
-}
+# dyadic heatmap
+unique_eff = srm_effects(classroom, type = "unique")
+srm_plot(unique_eff, type = "dyadic", n = 8)
 }

@@ -2,80 +2,62 @@
 % Please edit documentation in R/srm_effects.R
 \name{srm_effects}
 \alias{srm_effects}
-\title{This function calculates actor, partner,and unique effects via srm framework}
+\title{Calculate SRM actor, partner, or unique effects}
 \usage{
 srm_effects(mat, type = c("actor", "partner", "unique"), time = NULL)
 }
 \arguments{
-\item{mat}{A matrix or list of matrices}
+\item{mat}{A square numeric matrix (or list of square matrices for
+longitudinal data). Diagonal values are set to zero internally. NAs
+are replaced with zero. Must not be an \code{srm} object (effects are
+already stored in \code{fit$actor_effects}, etc.).}
 
-\item{type}{A string specifying the type of effect to calculate.}
+\item{type}{One of \code{"actor"}, \code{"partner"}, or \code{"unique"}:
+\itemize{
+\item \code{"actor"}: sender effects, returned as an n x 1 matrix.
+\item \code{"partner"}: receiver effects, returned as an n x 1 matrix.
+\item \code{"unique"}: dyadic residuals, returned as an n x n matrix with
+zero diagonal.
+}}
 
-\item{time}{A string specifying the time point(s) to calculate the effect}
+\item{time}{Optional character vector of time-point names to subset
+when \code{mat} is a named list.}
 }
 \value{
-A vector or list (if longitudinal) of actor/partner/unique effects
+For a single matrix, an effect matrix (with class \code{actor_effect},
+\code{partner_effect}, or \code{unique_effect}). For a list of matrices, a list
+of such matrices. See \code{\link[=srm]{srm()}} for the unified interface.
 }
 \description{
-This function calculates actor, partner,and unique effects via srm framework
+Decomposes a round-robin network into actor (sender), partner (receiver),
+and unique (dyadic) effects using the Social Relations Model framework.
+Requires a square (unipartite) adjacency matrix with at least 3 actors;
+matrices with fewer than 3 actors return \code{NA} values. For bipartite
+networks, use \code{\link[=srm]{srm()}} instead.
+}
+\details{
+When the input matrix is symmetric (undirected), actor and partner
+effects are identical by construction. The decomposition is most
+informative for directed (asymmetric) networks where sender and
+receiver roles are distinct.
 }
 \examples{
-# Simple example 
-test_matrix <- matrix(c(0, 1, 2, 2, 0, 1, 1, 2, 0), nrow=3, ncol=3)
+# simple inline example
+test_matrix = matrix(c(0, 1, 2, 2, 0, 1, 1, 2, 0), nrow = 3, ncol = 3)
+rownames(test_matrix) = colnames(test_matrix) = c("A", "B", "C")
+actor_effect = srm_effects(test_matrix, type = "actor")
 
-rownames(test_matrix) <- colnames(test_matrix) <- c("A", "B", "C")
-actor_effect <- srm_effects(test_matrix, type = "actor")
+# cross-sectional with included dataset
+data(classroom)
+actor_eff = srm_effects(classroom, type = "actor")
+head(actor_eff)
 
-\dontrun{
-#Example taken from GED data
-#subsetted to Mexico with resulting df as a dyadic dataframe
+partner_eff = srm_effects(classroom, type = "partner")
+unique_eff = srm_effects(classroom, type = "unique")
 
-UCDP_GED <- read_excel(paste0(pth,"GEDEvent_v24_1.xlsx"))
-mexico <- UCDP_GED |>
-filter(country=='Mexico')
-#turn dyadic df to a network object using netify using civ death as weight
-#so we have a matrix for crossectional and list for longitudinal
+# longitudinal
+data(trade_net)
+actor_long = srm_effects(trade_net, type = "actor")
+actor_2017 = srm_effects(trade_net, type = "actor", time = "2017")
 
-#cross-sectional
-
-mex_network_civ <- netify(
-dyad_data = mexico,
-actor1 = 'side_a',
-actor2 = 'side_b',
-weight = 'deaths_civilians',
-symmetric = TRUE,
-sum_dyads = TRUE,
-diag_to_NA = TRUE,
-missing_to_zero = TRUE
-)
-
-#longitudinal
-mex_network_long <- netify(
-  dyad_data = mexico,
-  actor1 = 'side_a',
-  actor2 = 'side_b',
-  time = 'year',      
-  weight = 'deaths_civilians',
-  symmetric = TRUE,
-  sum_dyads = TRUE,
-  diag_to_NA = TRUE,
-  missing_to_zero = TRUE
- )  
-
-# Calculate actor effects
-actor_effects <- srm_effects(mex_network_civ, type = "actor")
-
-# Calculate partner effects 
-partner_effects <- srm_effects(mex_network_civ, type = "partner")
-
-# Calculate unique effects
-unique_effects <- srm_effects(mex_network_civ, type = "unique")
-
-#Calculate actor effects for a specific time point
-actor_2015 <- srm_effects(mex_network_long, type = "actor", time = "2015")
-
-#Calculate actor effects for  specific time points
-yrs <- c("2015", "2016", "2017")
-actor_long <- srm_effects(mex_network_long, type = "unique", time = yrs)
-}
 }

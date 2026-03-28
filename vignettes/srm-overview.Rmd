@@ -1,5 +1,5 @@
 ---
-title: "srm-overview: Social Relations Models for Network Analysis"
+title: "Social Relations Models for Network Analysis"
 author: "Cassy Dorff, Shahryar Minhas, and Tosin Salau"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -11,19 +11,21 @@ vignette: >
 
 ## Package Overview
 
-This vignette provides an overview of the `srm` package, which provides tools for estimating social relations models for network data. It breaks down and analyzes networks into nodal and dyadic dependencies and allows users to understand actor, partner, and dyadic effects in network data (Dorff and Ward, 2013; Dorff and Minhas, 2017).
+This vignette introduces the `srm` package, which estimates social relations models for network data. It breaks down and analyzes networks into nodal and dyadic dependencies and allows users to understand actor, partner, and dyadic effects in network data (Dorff and Ward, 2013; Dorff and Minhas, 2017).
 
 **What users can do:**
 
-(1) **Identify the most active actors in the network** - both in terms of senders and receivers patterns. Users can identify which actors are more active than expected after accounting for overall network structure and partner characteristics.
+(1) **Identify the most active actors in the network** - both in terms of sender and receiver patterns. Users can identify which actors are more active than expected after accounting for overall network structure and partner characteristics.
 
 (2) **Identify overall network patterns** where users can separate systematic actor behaviors from relationship-specific effects.
 
-(3) **Generate specific summary statistics for the network data** that calculates covariances to can reveal whether active actors are also active receivers.
+(3) **Generate specific summary statistics for the network data** that can reveal whether active actors are also active receivers.
 
-(4) **Create  visualizations** to visualize actor behaviors from their relationship-specific patterns.
+(4) **Create visualizations** to visualize actor behaviors and their relationship-specific patterns.
 
 **In comparison to `netify`**, which provides general network statistics and visualizations, the srm package helps users break down network relationships allowing for deeper analysis. With `srm`, users are able to identify which actors are more or less active than typical and helps users explore why, relationally, some connections are stronger or weaker than expected. While `netify` focuses on overall network patterns, srm centers on explaining the individual behaviors and relationships that drive those patterns.
+
+**Note:** This vignette uses symmetric (undirected) network data, which constrains the SRM decomposition. If you have **directed** data where sender and receiver roles are distinct, the `pipeline` vignette provides a more complete walkthrough with all five SRM components. For **bipartite** (two-mode) networks, see the `bipartite` vignette.
 
 
 ```{r, include = FALSE}
@@ -35,58 +37,33 @@ knitr::opts_chunk$set(
   dpi = 200,
   out.width = "100%",
   fig.align = "center",
-  dev = "png" 
+  dev = "png"
 )
-
 ```
 
 
-## Install and load Packages
+## Load Packages
 ```{r setup, eval=TRUE, warning=FALSE, message=FALSE, results='hide'}
-
-# Install required packages if not already installed
-if(!'devtools' %in% rownames(installed.packages())){
-  install.packages('devtools', repos='https://cloud.r-project.org')
-}
-if(!'netify' %in% rownames(installed.packages())){
-  install.packages('netify', repos='https://cloud.r-project.org')
-}
-if(!'tidyverse' %in% rownames(installed.packages())){
-  install.packages('tidyverse', repos='https://cloud.r-project.org')
-}
-if(!'ggplot2' %in% rownames(installed.packages())){
-  install.packages('ggplot2', repos='https://cloud.r-project.org')
-}
-
-# Install the srm package from GitHub if not already installed
-if(!'srm' %in% rownames(installed.packages())){
-  devtools::install_github("netify-dev/srm")
-}
-
-# Load all packages
-library(devtools)
 library(netify)
-library(tidyverse)
-library(ggplot2)
 library(srm)
 ```
 
 ## Prepare Data
 
-We will make use of data from ATOP (Alliance Treaty Obligations and Provisions) to demonstrate the how to use the `srm` package. The data can be downloaded at http://www.atopdata.org. For this tutorial, we have selected the `atop5_1dy` dataset and focus on military security consultations between countries from 2010 to 2018 where at least one partner is from the following 11 East Asian countries:  Japan, South Korea, Philippines, Thailand, Singapore, Malaysia, Indonesia, India, China, Vietnam, and North Korea.
+We will make use of data from ATOP (Alliance Treaty Obligations and Provisions) to demonstrate how to use the `srm` package. The data can be downloaded at http://www.atopdata.org. For this tutorial, we have selected the `atop5_1dy` dataset and focus on military security consultation agreements from 2010 to 2018 involving countries in the broader East and Central Asian region. The dataset includes 18 countries: the East Asian core (China, India, Japan, South Korea, North Korea, Philippines, Thailand, Vietnam) along with their consultation treaty partners (Armenia, Kazakhstan, Kyrgyzstan, Pakistan, Russia, Tajikistan, Turkmenistan, Ukraine, USA, Uzbekistan).
 
 
-```{r, echo=FALSE}
-data("atop_EA")  # Load dataset
+```{r}
+data("atop_EA")
+head(atop_EA)
 ```
 
-
-We will make use of the `netify` package to make a network object from the atop data. We will create 2 network objects, one for cross-sectional data and the other for longitudinal data as examples for this vignette. 
+We will make use of the `netify` package to make a network object from the ATOP data. We will create two network objects, one for cross-sectional data and the other for longitudinal data as examples for this vignette. Note that these consultation agreements are symmetric (undirected) -- if country A has a consultation agreement with country B, the reverse is also true.
 
 ```{r, warning=FALSE, message=FALSE}
 # cross-sectional
-atop_EA_short <- netify::netify(
-  dyad_data = atop_EA,
+atop_EA_short = netify::netify(
+  input = atop_EA,
   actor1 = 'country1',
   actor2 = 'country2',
   symmetric = TRUE,
@@ -95,9 +72,9 @@ atop_EA_short <- netify::netify(
   missing_to_zero = TRUE
 )
 
-#longitudinal
-atop_EA_long <- netify::netify(
-  dyad_data = atop_EA,
+# longitudinal
+atop_EA_long = netify::netify(
+  input = atop_EA,
   actor1 = 'country1',
   actor2 = 'country2',
   time = 'year',
@@ -106,74 +83,47 @@ atop_EA_long <- netify::netify(
   diag_to_NA = TRUE,
   missing_to_zero = TRUE
 )
-  
 ```
 
+See `?netify::netify` for details on the parameters used above. The `netify` function creates a network object that can be used with the `srm` package. The resulting object is a matrix for cross-sectional data and a list of matrices for longitudinal data, where each matrix represents the network at a specific time point.
 
-### Netify Parameters
-
-- *dyad_data*: *data object*  
-  The data frame containing dyadic data.
-
-- *actor1*: *character*  
-  The variable name for the first actor in the dyad.
-
-- *actor2*: *character*  
-  The variable name for the second actor in the dyad.
-
-- *time*: *character*  
-  The variable name for the time variable if working with longitudinal data.  
-  The time variable should be of numeric type. If not provided, the function assumes cross-sectional data.
-
-- *symmetric*: *logical*  
-  Whether the network is symmetric (`TRUE`) or directed (`FALSE`).
-
-- *sum_dyads*: *logical*  
-  Whether to sum dyadic values (`TRUE`) or keep them separate (`FALSE`).
-
-- *diag_to_NA*: *logical*  
-  Whether to set diagonal values to `NA` (`TRUE`) or keep them as zero (`FALSE`).
-
-- *missing_to_zero*: *logical*  
-  Whether to replace missing values with zero (`TRUE`) or leave them as `NA` (`FALSE`).
-
-
-The `netify` function creates a network object that can be used with the `srm` package. The resulting object is a matrix for cross-sectional data and a list of matrices for longitudinal data, where each matrix represents the network at a specific time point. The diagonal values are set to NA, and missing values are replaced with zero.
+**A note on symmetric networks:** Because these consultation agreements are undirected, the resulting matrices are symmetric. In symmetric networks, actor effects and partner effects are identical by construction -- a country's tendency to "send" ties is the same as its tendency to "receive" them. The SRM is most informative for directed (asymmetric) networks where sender and receiver roles are distinct. We use this symmetric example here for illustration, but see the `classroom` dataset for an example with asymmetric data where the full SRM decomposition is more revealing.
 
 
 ## SRM Summary Statistics
 
-Now that we have our network objects, we can analyze relationships in the network via the `srm` package. Lets begin by generating summary statistics for the network data. We would look at the rowmeans and actor partner covariance for the cross-sectional data of the network data. 
+Now that we have our network objects, we can analyze relationships in the network via the `srm` package. Let's begin by generating summary statistics for the network data. We will look at the row means and actor-partner covariance for the cross-sectional data.
 
 
 ```{r}
-#calculate rowmeans
-srm_stats(atop_EA_short, type= "rowmeans")
+sort(srm_stats(atop_EA_short, type = "rowmeans"), decreasing = TRUE)
 ```
 
-
-After calculating the row means, we see that countries with higher row means such as China (3.76) and India (2.47) tend to have more intensive security consultation pacts or relationships on average compared to countries with more limited military consultation engagement like Turkmenistan (0.29) or Ukraine (0.35).
+The row means immediately reveal the most active countries: China (3.76) and India (2.47) have far more consultation agreements on average than countries like Turkmenistan (0.29) or Ukraine (0.35). Note the sharp drop-off after the top four (China, India, Russia, USA), with most countries clustered between 0.3 and 0.8.
 
 ```{r}
-#calculate actor partner covariance
 srm_stats(atop_EA_short, type = "actor_partner_cov")
 ```
 
 
-The actor-partner covariance of 0.65 shows a positive relationship that countries with high military consultation obligations are also receiving these consultation agreements in the network.
+The actor-partner covariance of 0.65 is positive, but this is a direct consequence of the network being symmetric: because every consultation tie is mutual, actor and partner effects are identical and the actor-partner covariance equals the actor variance by construction. In a directed network, this covariance would reveal whether active senders also tend to be active receivers; here, that question is not separable from general activity.
 
-Lets make use of the `time` argument and look at the colmeans for the longitudinal data of the network. We see we get a list of colmeans for the years 2001, 2013, and 2020 for each actor in the network. 
+Let's make use of the `time` argument and look at the column means for select years in the longitudinal data. New treaties entered the ATOP data between 2012 and 2015, so we select years that span these changes.
 
 ```{r}
-#subset to particular years
-yrs= c("2010", "2013", "2015", "2018")
+yrs = c("2010", "2013", "2015")
 
-srm_stats(atop_EA_long, type = "colmeans", time = yrs)
-
+col_means = srm_stats(atop_EA_long, type = "colmeans", time = yrs)
 ```
 
+With 18 countries across 3 years, the full output is large. We can compare a few key countries:
 
-The column means calculated for particular time periods show a country's average activity with security consultation pacts. The results show China's increasing activity from 0.29 in 2010 to 0.53 in 2018. Similarly, India shows an increase from 0.12 to 0.47. This is in contrast to other countries such as Russia and the USA, which remain stable around 0.24 without much change.
+```{r}
+focus = c("CHN", "IND", "RUS", "USA")
+sapply(col_means, function(x) round(x[focus], 2))
+```
+
+China's consultation activity increases from 0.29 in 2010 to 0.35 in 2013 and 0.53 by 2015, reflecting new agreements entering the dataset. India holds steady at 0.12 through 2013 and then jumps to 0.47 in 2015. Russia and the USA remain stable at 0.24 throughout.
 
 
 ## SRM Effects
@@ -183,98 +133,120 @@ We can analyze the actor, partner, and unique effects in the network data using 
 $$\hat{a}_i = \frac{(n-1)^2}{n(n-2)} X_{i.} + \frac{(n-1)}{n(n-2)} X_{.i} - \frac{n-1}{n-2} \bar{X}$$
 
 
-where $X_{i.}$ is the row sum for actor *i*, $X_{.i}$ is the column sum, and $\bar{X}$ is the overall network mean.
+where $X_{i.}$ is the row mean for actor *i*, $X_{.i}$ is the column mean, and $\bar{X}$ is the overall network mean.
 
 Similarly, the partner effect shows how much actor *i* tends to receive ties above or below average:
 
 $$\hat{b}_i = \frac{(n-1)^2}{n(n-2)} X_{.i} + \frac{(n-1)}{n(n-2)} X_{i.} - \frac{n-1}{n-2} \bar{X}$$
 
-We would look at the actor effects for the cross-sectional data of the network.
+We look at the actor effects for the cross-sectional data:
 
 
 ```{r}
 EA_actor = srm_effects(atop_EA_short, type = "actor")
-print(EA_actor)
+sort(EA_actor[, 1], decreasing = TRUE)
 ```
 
-The actor effects show how much an actor deviates from the network average in security consultation pacts. From this example, we see that China has the highest positive actor effect (+2.92), meaning it engages in security consultation pacts far more than the general network average. Other East Asian countries such as Thailand, Japan, and Korea have negative effects (around -0.52), suggesting they participate in security consultation pacts below the network average.
+The actor effects show how much an actor deviates from the network average in security consultation pacts. China has the highest positive actor effect (+2.92), meaning it engages in security consultation pacts far more than the network average. Other countries such as Thailand, Japan, and Korea have negative effects (around -0.52), suggesting they participate below the network average.
 
-We can also look at the unique effects as well. The unique dyadic effects is calculated as the following below. Both actor and partner tendencies are removed to isolate relationship-specific components:
+We can also look at the unique effects. The unique dyadic effect is the residual after removing both actor and partner tendencies:
 
 $$\hat{g}_{ij} = X_{ij} - \hat{a}_i - \hat{b}_j - \bar{X}$$
 
-We run this from the `srm_effects` function with the `type = "unique"` argument. 
+We run this from the `srm_effects` function with `type = "unique"`.
 
 
 ```{r}
 EA_unique = srm_effects(atop_EA_short, type = "unique")
 ```
 
+The unique effects are an 18x18 matrix. Rather than printing the full matrix, we can identify the strongest bilateral relationships by sorting the off-diagonal values:
 
+```{r}
+g_vec = EA_unique[row(EA_unique) != col(EA_unique)]
+names(g_vec) = outer(
+  rownames(EA_unique), colnames(EA_unique), paste, sep = "-"
+)[row(EA_unique) != col(EA_unique)]
+head(sort(g_vec, decreasing = TRUE), 6)
+```
 
-The dyadic effects show the unique relationship between a pair of actors in military consultations controlling for each actor's general tendencies. The results reveal which bilateral relationships are unusually strong or weak compared to what each country's overall behavior would predict. We will not display the output here because of the size.
+The top unique effects all have the same value (+7.3) because the ATOP consultation data is binary and symmetric: once actor and partner tendencies are removed, the remaining dyadic effects are strongly constrained. The pairs highlighted --- USA-Japan, USA-Korea, USA-Philippines, and Russia-North Korea --- are the alliances that exist despite both partners having relatively low overall activity. In a directed, continuous-valued network, unique effects would show more differentiation across dyads; see the `pipeline` vignette for such an example.
 
-
-Similarly, we can do the same for the longitudinal data. We would look at the partner effects for the years 2001, 2013, and 2020 of the nig_net_long network. The function returns a list of matrices showing partner effects for each year. We will not display the output here beause of the size.  
-
-**NOTE**: For undirected networks, the partner effect is the same as the actor effect. The output is a matrix of the unique effects of each actor on the other actors in the network. 
+For the longitudinal data, we extract actor effects for selected years. Because the network is symmetric, actor and partner effects are identical, so we focus on actor effects only.
 
 ```{r}
 EA_actor_long = srm_effects(atop_EA_long, type = "actor", time = yrs)
 ```
 
+We can compare China and India's actor effects across these three years to see how their consultation activity evolved:
+
+```{r}
+sapply(EA_actor_long, function(x) round(x[c("CHN", "IND"), 1], 2))
+```
+
+China's actor effect grows from +0.22 in 2010 to +0.41 by 2015 as new agreements enter the data. India starts near the network average in 2010 (+0.03) and jumps to +0.35 in 2015, reflecting the same wave of new consultation agreements visible in the column means above.
 
 ## Visualization
 
-We might want to visualize the actor, partner, or dyadic effects in the network data. We can do this using the `srm_plot` function. The actor/partner effect plots show actors sorted by the absolute magnitude of their effects, with positive effects in blue and negative effects in red.  Actors with strong effects in either direction (highly positive or highly negative) will appear in the plot. The default number of actors to show is the top 10. Users can change this by setting the `n` argument in the `srm_plot` function.
+We can visualize the actor, partner, or dyadic effects using the `srm_plot` function. The actor/partner effect plots show actors sorted by the absolute magnitude of their effects, with positive effects in dark bars and negative effects in light gray bars. The default number of actors shown is the top 10, adjustable via the `n` argument.
 
 **Things to note:**
 
-  (1) Users need to put in results from the `srm_effects` function as input to the `srm_plot` function. 
-  
-  (2) For undirected networks, the partner effect is the same as the actor effect so users are advised to use the `type = actor` argument when plotting if working with symmetric data.
+  (1) Users need to put in results from the `srm_effects` function as input to the `srm_plot` function.
 
-We would take a look at the actor effects for the cross-sectional data of the network. 
+  (2) For undirected networks, use `type = "actor"` when plotting since partner effects are identical.
+
+We look at the actor effects for the cross-sectional data:
 
 ```{r}
-#include the actor effects from the srm_effects function
-srm_plot(EA_actor, type = "actor", n=9)
-
+srm_plot(EA_actor, type = "actor", n = 9)
 ```
 
-The srm plot for actor effects show positive effects which are in black (right side) and negative effects which are in gray (left side). They show actors that engage in military consultation obligations above or below the network average. China has the highest positive effect, indicating it engages in military consultation obligations significantly more than the network average. Countries such as Turkmenistan have the strongest negative effects, showing they engage in military consultation obligations below the network average
+Positive effects are shown in dark bars (right side) and negative effects in light gray bars (left side). China has the highest positive effect, engaging in military consultation obligations significantly more than the network average. Countries such as Turkmenistan have the strongest negative effects.
 
-We can also look at the dyadic effects for the cross-sectional data of the network. When users supply dyadic effect, the function returns a heatmap of the dyadic effects in the network data. Similarly, users can set the `n` argument to specify the number of actors to show in the plot and positive effects are in blue and negative effects in red. Default is the top 10 actors. 
+We can also look at the dyadic effects. When users supply the unique effects, the function returns a heatmap with a diverging color scale. Dark cells indicate stronger-than-expected relationships (positive unique effects), blue cells indicate weaker-than-expected relationships (negative unique effects), and white cells are close to what we would predict from actor tendencies alone.
 
 
 ```{r, fig.width=8, fig.height=6, dpi=100, dev="png"}
-
-#include the unique effects from the srm_effects function
-srm_plot(EA_unique, type = "dyadic", n=12)
-
+srm_plot(EA_unique, type = "dyadic", n = 12)
 ```
 
-The srm plot for dyadic effects shows a heatmap of the unique relationship between actor pairs in military consultation obligations after controlling for each actors's general tendencies. Darker cells indicate relationships that are stronger-than-expected, while light gray cells show relationships that are weaker-than-expected, and white cells represent relationships that align with predicted patterns. For example, the USA has strong military consultation relationships with Japan, Korea, and Thailand beyond what their general activity levels would predict. Most cells here are white showing many bilateral relationships on military consultation obligations are similar to what we would expect.
+The heatmap reveals which bilateral relationships are unusually strong or weak after controlling for each actor's general tendencies. For example, the USA has strong military consultation relationships with Japan, Korea, and Thailand beyond what their general activity levels would predict. Most cells are white, showing that many bilateral relationships are close to what we would expect.
 
-We can also do the same for the longitudinal data. We can take a look at the actor effects for the years 2001, 2013, and 2020 of the nig_net_long network. To do so, we will set `facet=TRUE` for the srm_plot function to compare visualizations across time. Similarly, we can set the `n` argument to specify the number of actors to show in the plot.
+For the longitudinal data, we can set `facet = TRUE` to compare actor effects across time periods:
 
 ```{r}
-# include the actor effects from the srm_effects function
 srm_plot(EA_actor_long, type = "actor", facet = TRUE, time = yrs, n = 8)
-
 ```
 
-The `srm` plot for longitudinal actor effects shows how actors' military consultation obligation patterns evolved over time. The actor effects are sorted by absolute value, with positive effects in dark bars and negative effects in light gray bars. Across the time periods, China remains the country with the highest positive actor effects (dark bars) showing growth from 2010. This is similar to India. The USA and Russia show reduced positive effects in later years but still maintain relatively stable above-average military consultation obligation patterns. Other countries with gray bars show negative actor effects suggesting they engage in military consultation obligations below what would be expected from the network average.
+The faceted plot shows how actor effects evolve over time. China consistently has the highest positive actor effect. India's effect grows across the periods as new consultation agreements enter the data. Other countries with light gray bars have negative effects, suggesting below-average consultation activity.
+
+## Using the Unified Interface
+
+The examples above use the original component functions (`srm_effects`, `srm_stats`, `srm_plot`). The package also provides a unified `srm()` function that computes everything at once, returning a single object with `print`, `summary`, and `plot` methods. The `srm()` approach is more concise for a typical analysis:
+
+```{r}
+fit = srm(atop_EA_short)
+summary(fit)
+```
+
+Because this is a symmetric (undirected) network, the variance decomposition is heavily constrained: actor and partner variance are equal (both 9%), while unique variance dominates at 82%. The relationship covariance equals the unique variance and the actor-partner covariance equals the actor variance, all by construction. The SRM cannot distinguish sender behavior from receiver behavior here.
+
+```{r}
+plot(fit, type = "variance")
+```
+
+The lopsided 9% / 9% / 82% split is typical for symmetric networks and reflects the structural constraints rather than a substantive finding. For directed networks, the decomposition is far more informative. The `classroom` dataset (a directed friendship network) produces a 42% / 26% / 32% split across distinct actor, partner, and unique components, with sender tendencies dominating. See the `pipeline` vignette for a complete directed-data walkthrough.
 
 ## Conclusion
 
-The `srm` package provides a comprehensive toolkit for social relations model analysis, allowing researchers to decompose network effects into actor, partner, and unique components. This vignette demonstrated basic functionality and a real-world application to conflict data.
+This vignette demonstrated the core `srm` workflow using ATOP consultation data: computing row and column means, decomposing actor and dyadic effects, and visualizing the results. China and India stand out as the most active consultation partners, and the strongest relationship-specific effects belong to alliances like USA-Japan and USA-Korea. Because this dataset is symmetric (undirected), the SRM decomposition is structurally constrained --- actor and partner effects are identical and the variance partition is dominated by unique effects. For directed-data examples where all five SRM components are distinct, see the `pipeline` and `methodology` vignettes.
 
 
 **References**:
 
- Dorff, Cassy, and Michael D. Ward. (2013) Networks, Dyads, and the Social Relations Model. Political Science Research Methods 1(2):159–178.
- 
-Dorff, Cassy, and Minhas Shahryar. (2016). When Do States Say Uncle? Network Dependence and Sanction Compliance. International Interactions 43(4): 563–588.
+Dorff, Cassy, and Michael D. Ward. (2013) Networks, Dyads, and the Social Relations Model. Political Science Research Methods 1(2):159-178.
+
+Dorff, Cassy, and Shahryar Minhas. (2017). When Do States Say Uncle? Network Dependence and Sanction Compliance. International Interactions 43(4): 563-588.
 
 Leeds, Brett Ashley, Jeffrey M. Ritter, Sara McLaughlin Mitchell, and Andrew G. Long. 2002. Alliance Treaty Obligations and Provisions, 1815-1944. International Interactions 28: 237-260.

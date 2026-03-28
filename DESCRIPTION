@@ -1,23 +1,36 @@
 Package: srm
-Title: SRM: Social Relations Model Toolkit
-Version: 0.0.0.9000
-Authors@R: c(person("Cassy", "Dorff", email = "cassy.dorff@vanderbilt.edu", role = c("aut")), person("Shahryar", "Minhas", email = "minhassh@msu.edu", role = c("aut", "cre")), person("Tosin", "Salau", email = "salaubol@msu.edu", role = c("ctb")))
-Description: srm allows users to get nodal and dyadic relationships from networks.
+Title: Social Relations Model Toolkit for Network Analysis
+Version: 1.0.0
+Authors@R: c(
+    person("Cassy", "Dorff", email = "cassy.dorff@vanderbilt.edu", role = c("aut")),
+    person("Shahryar", "Minhas", email = "minhassh@msu.edu", role = c("aut", "cre")),
+    person("Tosin", "Salau", email = "salaubol@msu.edu", role = c("aut")))
+Description: Provides tools for estimating Social Relations Models (SRM) for
+    network data. Decomposes network effects into actor, partner, and unique
+    dyadic components, computes variance partitions and covariance structures,
+    and supports permutation-based inference. Handles both cross-sectional and
+    longitudinal networks, including bipartite (two-mode) designs. Integrates
+    with the 'netify' package ecosystem for network construction, analysis,
+    and visualization.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
-Suggests: 
+RoxygenNote: 7.3.3
+URL: https://netify-dev.github.io/srm/, https://github.com/netify-dev/srm
+BugReports: https://github.com/netify-dev/srm/issues
+Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
-Imports: 
+Imports:
     cli,
     ggplot2,
     netify,
-    reshape2
+    reshape2,
+    stats,
+    tools
 VignetteBuilder: knitr
-Depends: 
-    R (>= 2.10)
+Depends:
+    R (>= 3.5.0)
 LazyData: true

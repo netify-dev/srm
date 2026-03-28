@@ -1,0 +1,262 @@
+---
+title: "The netify-srm Pipeline"
+author: "Cassy Dorff, Shahryar Minhas, and Tosin Salau"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{The netify-srm Pipeline}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "",
+  fig.width = 6,
+  fig.height = 4,
+  dpi = 150,
+  out.width = "100%",
+  fig.align = "center"
+)
+```
+
+## Overview
+
+The `srm` package is part of the **netify ecosystem** of R packages for network analysis:
+
+- **netify**: Network construction and general analysis
+- **lame**: Latent and Multiplicative Effects models
+- **sir**: Social Influence Regression models
+- **dbn**: Dynamic Bilinear Network models
+
+The SRM decomposition is a natural first step before fitting more complex models. It answers: *How much of the variation in this network is due to sender behavior, receiver behavior, and relationship-specific factors?*
+
+This vignette walks through a complete analysis pipeline: converting raw data to networks with `netify`, decomposing directed networks with `srm`, testing significance via permutation, tracking change over time, and validating with simulation.
+
+## Step 1: From dyadic data to networks
+
+We begin with the ATOP East Asia consultation agreements included in the package.
+
+```{r, message=FALSE, warning=FALSE}
+library(srm)
+library(netify)
+
+data("atop_EA")
+head(atop_EA)
+```
+
+The data is a dyad-year data frame: each row records a consultation agreement between two countries in a given year. We use `netify` to convert this into an adjacency matrix and pass it directly to `srm()`:
+
+```{r, message=FALSE, warning=FALSE}
+net_cross = netify::netify(
+  input = atop_EA, actor1 = "country1", actor2 = "country2",
+  symmetric = TRUE, sum_dyads = TRUE, diag_to_NA = TRUE,
+  missing_to_zero = TRUE
+)
+
+fit_atop = srm(net_cross)
+fit_atop
+```
+
+Because this network is symmetric (undirected), actor and partner effects are identical, which constrains the variance decomposition: actor and partner variance are equal, and relationship covariance equals unique variance. To separate sender behavior from receiver behavior, we need directed data.
+
+## Step 2: Cross-sectional SRM with directed data
+
+The `classroom` dataset is a 12 x 12 matrix of friendship ratings among students at North Shore High (inspired by *Mean Girls*), where student $i$'s rating of student $j$ need not equal $j$'s rating of $i$.
+
+```{r}
+data("classroom")
+fit = srm(classroom)
+fit
+```
+
+With directed data, the three variance components are now distinct: actor variance (42.3%) captures differences in how generously students rate others on average, partner variance (25.8%) captures differences in how highly students are rated by others, and unique variance (31.9%) captures relationship-specific deviations. Actor effects are the largest component --- individual sending tendencies (generosity vs. selectivity) are the dominant source of variation in this network.
+
+The covariances are also informative. The positive relationship covariance (0.69) indicates reciprocity: if student $i$ rates $j$ above average, $j$ tends to rate $i$ above average as well. The negative actor-partner covariance (-0.25) captures a classic Queen Bee dynamic: generous raters (like Damian) are not the most popular, while the most popular student (Regina) is the stingiest rater.
+
+### Variance partition
+
+```{r}
+plot(fit, type = "variance")
+```
+
+The variance partition shows that sender tendencies are the largest source of variation, followed by relationship-specific effects and then receiver popularity. All three components contribute meaningfully.
+
+### Who rates most generously? Who is rated most highly?
+
+```{r, fig.height = 5}
+plot(fit, type = "actor")
+```
+
+Damian has the largest positive actor effect (+2.36), meaning he rates peers well above the class average. He's the warmest rater at North Shore High. Regina (-2.64) and Shane (-0.89) have the most negative actor effects --- Regina rates strategically low, consistent with her role as the selective Queen Bee.
+
+```{r, fig.height = 5}
+plot(fit, type = "partner")
+```
+
+The partner effects tell the opposite side: Regina is the most popular (highest partner effect, +1.67), while Gretchen is rated lowest by peers (-1.71) --- "and none for Gretchen Wieners." Notice that Regina has the most negative actor effect but the strongest positive partner effect --- she is the stingiest rater but the most admired student. A classic Queen Bee dynamic. Aaron (+1.39) and Cady (+1.14) are also popular, while Kevin (-0.66) and Trang (-0.70) sit at the bottom.
+
+### Dyadic effects
+
+```{r}
+plot(fit, type = "dyadic", n = 6)
+```
+
+The heatmap of unique effects shows relationship-specific deviations after removing actor and partner tendencies. Dark cells indicate pairs whose mutual ratings exceed what their individual tendencies would predict (positive unique effects); blue cells indicate pairs who rate each other lower than expected (negative unique effects); white cells are close to predicted.
+
+### Test significance
+
+Permutation testing assesses whether the observed variance components are larger than expected under random relabeling of actors:
+
+```{r}
+pt = permute_srm(fit, n_perms = 500, seed = 6886)
+print(pt)
+```
+
+Both actor and partner variance are significant ($p < 0.05$), confirming that the heterogeneity in sending and receiving behavior is not an artifact of chance. The relationship covariance is also significant ($p < 0.05$), providing evidence of genuine reciprocity --- friends rate each other well. The actor-partner covariance is not significant ($p > 0.8$), so the Queen Bee pattern (negative correlation between giving and receiving) should be interpreted cautiously.
+
+The unique variance has $p = 1.0$ because permutation preserves marginal totals: after shuffling, dyadic noise increases, so the observed unique variance is always smaller than the null. This is expected and does not mean dyadic effects are absent.
+
+```{r, fig.height = 5}
+plot(pt)
+```
+
+The null distributions show where the observed statistics (vertical lines) fall relative to the permuted values. Actor, partner, and relationship covariance sit in the right tail of their null distributions, while unique variance sits in the left tail.
+
+## Step 3: Longitudinal analysis
+
+The `trade_net` dataset contains simulated bilateral trade intensity matrices for 10 countries at three time points (2015, 2017, 2019). Because trade flows are directed --- exports from $i$ to $j$ differ from exports from $j$ to $i$ --- the decomposition produces distinct actor and partner components at each period.
+
+```{r}
+data("trade_net")
+fit_long = srm(trade_net)
+fit_long
+```
+
+Averaged across periods, actor variance (33.0%) and partner variance (29.5%) are comparable, with unique effects at 37.4%. The positive relationship covariance (0.36) reflects trade reciprocity, and the positive actor-partner covariance (0.23) means that countries which export heavily also tend to import heavily.
+
+### Stability of positions over time
+
+Do countries maintain their relative positions as exporters and importers across periods?
+
+```{r}
+srm_stability(fit_long, type = "actor")
+```
+
+Actor effect correlations are low: 0.08 between 2015 and 2017, and 0.20 between 2017 and 2019. Countries' relative export positions shift substantially between periods.
+
+```{r}
+srm_stability(fit_long, type = "partner")
+```
+
+Partner effects are similarly unstable (correlation of -0.01 between 2015--2017, rising to 0.56 between 2017--2019). The import side shows more continuity in the later period, but both sender and receiver roles are reshuffled across time.
+
+### Tracking specific countries
+
+Use `srm_trends()` to extract actor or partner effects as a tidy data frame across time points:
+
+```{r}
+srm_trends(fit_long, type = "actor", actors = c("CAN", "DEU", "BRA", "KOR"))
+```
+
+Canada's actor effect jumps from 0.57 in 2015 to 1.65 in 2019, ending as the strongest relative exporter. South Korea reverses from -0.99 in 2017 to 1.00 in 2019. Brazil is consistently negative across all three periods. Germany remains a positive exporter throughout (0.93, 0.44, 1.05).
+
+```{r}
+srm_trend_plot(fit_long, type = "actor", n = 4)
+```
+
+```{r}
+srm_trends(fit_long, type = "partner", actors = c("CAN", "FRA", "KOR", "CHN"))
+```
+
+On the import side, France shows the most dramatic shift, moving from -0.60 in 2015 to +1.58 in 2017, indicating a sharp increase in relative import intensity. South Korea's partner effect is consistently negative (-0.33 to -1.07), meaning it receives less trade than its peers. Canada maintains a positive partner effect across all periods.
+
+```{r}
+srm_trend_plot(fit_long, type = "partner", n = 4)
+```
+
+## Step 4: Simulation for validation
+
+To build confidence in the decomposition, we verify that it can recover known parameters from simulated data. We generate a directed network with specified variance components:
+
+```{r}
+sim = sim_srm(
+  n_actors = 25,
+  actor_var = 2.0,
+  partner_var = 1.0,
+  unique_var = 3.0,
+  actor_partner_cov = 0.5,
+  relationship_cov = 0.3,
+  grand_mean = 1.0,
+  seed = 6886
+)
+
+fit_sim = srm(sim$Y)
+summary(fit_sim)
+```
+
+Compare the true parameters against the SRM estimates:
+
+```{r}
+data.frame(
+  Component = c("Actor var", "Partner var", "Unique var",
+                "Relationship cov", "Actor-partner cov"),
+  True = c(2.0, 1.0, 3.0, 0.3, 0.5),
+  Estimated = round(fit_sim$stats$variance, 2)
+)
+```
+
+The variance components recover the true values reasonably well: actor variance (1.81 vs. 2.0), partner variance (1.10 vs. 1.0), and unique variance (3.21 vs. 3.0) are all in the right neighborhood of their targets. The covariance estimates (relationship: 0.38 vs. 0.3; actor-partner: 0.64 vs. 0.5) show more sampling variability --- covariances are harder to estimate precisely from a single network, especially with only 25 actors. The relative ordering is preserved --- unique variance is largest, actor variance is roughly double partner variance --- confirming that the decomposition correctly identifies the structure of the data generating process.
+
+## Step 5: Bipartite (two-mode) networks
+
+When senders and receivers belong to different populations, the network is bipartite and the decomposition simplifies. There is no reciprocity structure or actor-partner covariance; only actor variance, partner variance, and unique variance are estimated. We demonstrate with a simulated two-mode network of 15 senders and 20 receivers:
+
+```{r}
+sim_bip = sim_srm(
+  n_actors = c(15, 20),
+  bipartite = TRUE,
+  actor_var = 2.0,
+  partner_var = 1.0,
+  unique_var = 1.5,
+  grand_mean = 3.0,
+  seed = 6886
+)
+
+fit_bip = srm(sim_bip$Y)
+fit_bip
+```
+
+The bipartite SRM reports only three variance components (no covariances). Actor variance captures differences among the 15 senders; partner variance captures differences among the 20 receivers. The variance partition reveals which side of the network drives more heterogeneity.
+
+```{r}
+plot(fit_bip, type = "variance")
+```
+
+Actor and partner effects can be visualized the same way as for unipartite networks:
+
+```{r}
+plot(fit_bip, type = "actor")
+```
+
+The bar chart shows the 15 senders sorted by absolute effect size. Senders with positive effects (dark bars) send higher values than the network average; senders with negative effects (gray bars) send lower than average. Because the network is simulated from known parameters, the spread of effects reflects the `actor_var = 2.0` we specified.
+
+Bipartite networks also support longitudinal analysis. Pass a list of rectangular matrices to `srm()`, and all the longitudinal tools (`srm_trends`, `srm_stability`, `srm_trend_plot`) work as expected.
+
+## Summary
+
+The `srm` package provides a descriptive decomposition complementary to the model-based approaches in `lame`, `sir`, and `dbn`. A typical analysis pipeline:
+
+1. **Construct** the network from raw data using `netify`, or supply a matrix directly
+2. **Decompose** with `srm()` to partition variation into actor, partner, and dyadic components
+3. **Visualize** actor effects, partner effects, dyadic heatmaps, and variance partitions with `plot()`
+4. **Test** significance via `permute_srm()` to assess whether components exceed chance levels
+5. **Track** longitudinal change with `srm_stability()` and `srm_trend_plot()`
+6. **Validate** with `sim_srm()` to confirm that the decomposition recovers known parameters
+
+## References
+
+Dorff, Cassy, and Michael D. Ward. (2013). Networks, Dyads, and the Social Relations Model. *Political Science Research Methods* 1(2):159-178.
+
+Dorff, Cassy, and Shahryar Minhas. (2017). When Do States Say Uncle? Network Dependence and Sanction Compliance. *International Interactions* 43(4):563-588.

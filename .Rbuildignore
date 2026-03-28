@@ -3,3 +3,11 @@
 ^LICENSE\.md$
 ^doc$
 ^Meta$
+^\.github$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^data-raw$
+^\.claude$
+^Rplots\.pdf$
+^figure$
