@@ -1,37 +1,90 @@
-# srm
+# srm <img src="man/figures/srm_hex.png" align="right" alt="srm package hex logo" width="200px">
 
 ## Overview
 
-The `srm` package provides tools for analyzing network data via the Social Relations Model. It decomposes networks into actor (sender), partner (receiver), and unique dyadic components, computes variance partitions and covariance structures, and supports permutation-based inference. Works with both cross-sectional and longitudinal networks, including bipartite designs. Part of the [netify](https://github.com/netify-dev/netify) ecosystem.
+`srm` is an R package for decomposing network data using the Social Relations Model (SRM). It partitions variation in directed networks into three components: actor effects (sender tendencies), partner effects (receiver tendencies), and unique dyadic effects (relationship-specific deviations). It also estimates covariance structures that capture reciprocity and the correlation between sending and receiving behavior.
+
+Part of the [netify](https://github.com/netify-dev/netify) ecosystem for network analysis in R.
 
 ## Installation
 
 ```r
-if (!require(devtools)) install.packages("devtools")
+# install.packages("devtools")
 devtools::install_github("netify-dev/srm")
 ```
 
-## Usage
+## Quick Start
 
 ```r
 library(srm)
 
-# fit SRM to included classroom data
+# Decompose a directed friendship network
 data(classroom)
 fit = srm(classroom)
 fit
-summary(fit)
-
-# visualize
-plot(fit, type = "actor", n = 8)
-plot(fit, type = "variance")
-
-# permutation test
-pt = permute_srm(fit, n_perms = 500, seed = 6886)
-print(pt)
 ```
 
-The package also works directly with `netify` objects:
+```
+Social Relations Model
+----------------------------------------
+Mode:       unipartite
+Actors:     12
+Grand mean: 3.5077
+
+Variance Decomposition:
+  Actor          1.4000  ( 42.3%)
+  Partner        0.8539  ( 25.8%)
+  Unique         1.0546  ( 31.9%)
+  Relationship   0.6885  (cov)
+  Actor-Partner  -0.2525  (cov)
+```
+
+Actor effects explain 42% of the variation --- individual sending tendencies (generosity vs. selectivity) are the dominant source of variation. The positive relationship covariance indicates reciprocity; the negative actor-partner covariance means generous raters are not necessarily rated highly in return.
+
+### Visualize
+
+```r
+# Variance partition
+plot(fit, type = "variance")
+
+# Actor and partner effects
+plot(fit, type = "actor")
+plot(fit, type = "partner")
+
+# Dyadic heatmap
+plot(fit, type = "dyadic", n = 6)
+```
+
+### Test significance
+
+```r
+pt = permute_srm(fit, n_perms = 500, seed = 6886)
+print(pt)
+plot(pt)
+```
+
+### Longitudinal analysis
+
+```r
+data(trade_net)
+fit_long = srm(trade_net)
+
+# Stability of positions over time
+srm_stability(fit_long, type = "actor")
+
+# Track specific countries
+srm_trend_plot(fit_long, type = "actor", n = 4)
+```
+
+### Bipartite (two-mode) networks
+
+```r
+data(small_council)
+fit_bip = srm(small_council)
+summary(fit_bip)
+```
+
+### Works with netify objects
 
 ```r
 library(netify)
@@ -51,8 +104,51 @@ fit = srm(net)
 summary(fit)
 ```
 
-See the vignettes for detailed examples: `srm-overview` (component-by-component walkthrough), `pipeline` (end-to-end analysis), `bipartite` (two-mode networks), and `methodology` (mathematical framework).
+## Key Functions
+
+| Task | Function | Description |
+|------|----------|-------------|
+| Fit SRM | `srm()` | Decompose a network into actor, partner, and unique effects |
+| Extract effects | `srm_effects()` | Get actor, partner, or unique effect matrices |
+| Variance components | `srm_stats()` | Compute specific variance/covariance statistics |
+| Visualize | `plot()` | Actor/partner bar plots, dyadic heatmaps, variance partitions |
+| Permutation test | `permute_srm()` | Test significance of variance components |
+| Longitudinal trends | `srm_trends()` | Extract effects as tidy data across time points |
+| Trend plots | `srm_trend_plot()` | Visualize effect trajectories over time |
+| Stability | `srm_stability()` | Inter-temporal correlations of effects |
+| Simulate | `sim_srm()` | Generate synthetic networks from known SRM parameters |
+
+## Vignettes
+
+- **[Getting Started](https://netify-dev.github.io/srm/articles/srm-overview.html)** --- Component-by-component walkthrough
+- **[The netify-srm Pipeline](https://netify-dev.github.io/srm/articles/pipeline.html)** --- End-to-end analysis from raw data to inference
+- **[Bipartite Networks](https://netify-dev.github.io/srm/articles/bipartite.html)** --- Two-mode SRM analysis
+- **[Methodology](https://netify-dev.github.io/srm/articles/methodology.html)** --- Mathematical framework and estimation details
+
+## Getting Help
+
+- Browse vignettes: `browseVignettes("srm")`
+- Function documentation: `?srm`, `?permute_srm`, `?sim_srm`
+- Report bugs: [GitHub Issues](https://github.com/netify-dev/srm/issues)
+
+## Citation
+
+If you use `srm` in your research, please cite:
+
+```r
+citation("srm")
+```
+
+## References
+
+Dorff, Cassy, and Michael D. Ward. (2013). Networks, Dyads, and the Social Relations Model. *Political Science Research Methods* 1(2):159-178.
+
+Dorff, Cassy, and Shahryar Minhas. (2017). When Do States Say Uncle? Network Dependence and Sanction Compliance. *International Interactions* 43(4):563-588.
 
 ## Contributors
 
-Cassy Dorff (Vanderbilt University), Shahryar Minhas (Michigan State University), Tosin Salau (Michigan State University)
+- **Cassy Dorff** (Vanderbilt University)
+- **Shahryar Minhas** (Michigan State University)
+- **Tosin Salau** (Michigan State University)
+
+This work is supported by National Science Foundation Awards #2017162 and #2017180.
