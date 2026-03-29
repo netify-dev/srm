@@ -31,6 +31,8 @@ Imports:
     stats,
     tools
 VignetteBuilder: knitr
+Remotes:
+    netify-dev/netify
 Depends:
     R (>= 3.5.0)
 LazyData: true

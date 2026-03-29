@@ -100,7 +100,7 @@ $$\hat{\sigma}_{ab} = \frac{\sum_i \hat{a}_i \hat{b}_i}{n-1} - \frac{\hat{\sigma
 
 A key summary of the SRM is the **variance partition**, which expresses the proportion of total network variation attributable to each component:
 
-$$\text{% Actor} = \frac{\hat{\sigma}^2_a}{\hat{\sigma}^2_a + \hat{\sigma}^2_b + \hat{\sigma}^2_g} \times 100$$
+$$\text{\% Actor} = \frac{\hat{\sigma}^2_a}{\hat{\sigma}^2_a + \hat{\sigma}^2_b + \hat{\sigma}^2_g} \times 100$$
 
 This tells us whether network structure is primarily driven by differences in sending behavior (actor effects), receiving behavior (partner effects), or relationship-specific factors (unique effects).
 
