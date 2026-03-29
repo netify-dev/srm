@@ -57,41 +57,91 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="srm">srm<a class="anchor" aria-label="anchor" href="#srm"></a>
+<div class="page-header"><h1 id="srm-">srm <img src="reference/figures/srm_hex.png" align="right" alt="srm package hex logo" width="200px"><a class="anchor" aria-label="anchor" href="#srm-"></a>
 </h1></div>
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>The <code>srm</code> package provides tools for analyzing network data via the Social Relations Model. It decomposes networks into actor (sender), partner (receiver), and unique dyadic components, computes variance partitions and covariance structures, and supports permutation-based inference. Works with both cross-sectional and longitudinal networks, including bipartite designs. Part of the <a href="https://github.com/netify-dev/netify" class="external-link">netify</a> ecosystem.</p>
+<p><code>srm</code> is an R package for decomposing network data using the Social Relations Model (SRM). It partitions variation in directed networks into three components: actor effects (sender tendencies), partner effects (receiver tendencies), and unique dyadic effects (relationship-specific deviations). It also estimates covariance structures that capture reciprocity and the correlation between sending and receiving behavior.</p>
+<p>Part of the <a href="https://github.com/netify-dev/netify" class="external-link">netify</a> ecosystem for network analysis in R.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="va"><a href="https://devtools.r-lib.org/" class="external-link">devtools</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"netify-dev/srm"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
+<h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://netify-dev.github.io/srm/">srm</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># fit SRM to included classroom data</span></span>
+<span><span class="co"># Decompose a directed friendship network</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">classroom</span><span class="op">)</span></span>
 <span><span class="va">fit</span> <span class="op">=</span> <span class="fu"><a href="reference/srm.html">srm</a></span><span class="op">(</span><span class="va">classroom</span><span class="op">)</span></span>
-<span><span class="va">fit</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># visualize</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"actor"</span>, n <span class="op">=</span> <span class="fl">8</span><span class="op">)</span></span>
+<span><span class="va">fit</span></span></code></pre></div>
+<pre><code>Social Relations Model
+----------------------------------------
+Mode:       unipartite
+Actors:     12
+Grand mean: 3.5077
+
+Variance Decomposition:
+  Actor          1.4000  ( 42.3%)
+  Partner        0.8539  ( 25.8%)
+  Unique         1.0546  ( 31.9%)
+  Relationship   0.6885  (cov)
+  Actor-Partner  -0.2525  (cov)</code></pre>
+<p>Actor effects explain 42% of the variation — individual sending tendencies (generosity vs. selectivity) are the dominant source of variation. The positive relationship covariance indicates reciprocity; the negative actor-partner covariance means generous raters are not necessarily rated highly in return.</p>
+<div class="section level3">
+<h3 id="visualize">Visualize<a class="anchor" aria-label="anchor" href="#visualize"></a>
+</h3>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Variance partition</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"variance"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># permutation test</span></span>
-<span><span class="va">pt</span> <span class="op">=</span> <span class="fu"><a href="reference/permute_srm.html">permute_srm</a></span><span class="op">(</span><span class="va">fit</span>, n_perms <span class="op">=</span> <span class="fl">500</span>, seed <span class="op">=</span> <span class="fl">6886</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">pt</span><span class="op">)</span></span></code></pre></div>
-<p>The package also works directly with <code>netify</code> objects:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<span><span class="co"># Actor and partner effects</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"actor"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"partner"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Dyadic heatmap</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"dyadic"</span>, n <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="test-significance">Test significance<a class="anchor" aria-label="anchor" href="#test-significance"></a>
+</h3>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pt</span> <span class="op">=</span> <span class="fu"><a href="reference/permute_srm.html">permute_srm</a></span><span class="op">(</span><span class="va">fit</span>, n_perms <span class="op">=</span> <span class="fl">500</span>, seed <span class="op">=</span> <span class="fl">6886</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">pt</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pt</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="longitudinal-analysis">Longitudinal analysis<a class="anchor" aria-label="anchor" href="#longitudinal-analysis"></a>
+</h3>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">trade_net</span><span class="op">)</span></span>
+<span><span class="va">fit_long</span> <span class="op">=</span> <span class="fu"><a href="reference/srm.html">srm</a></span><span class="op">(</span><span class="va">trade_net</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Stability of positions over time</span></span>
+<span><span class="fu"><a href="reference/srm_stability.html">srm_stability</a></span><span class="op">(</span><span class="va">fit_long</span>, type <span class="op">=</span> <span class="st">"actor"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Track specific countries</span></span>
+<span><span class="fu"><a href="reference/srm_trend_plot.html">srm_trend_plot</a></span><span class="op">(</span><span class="va">fit_long</span>, type <span class="op">=</span> <span class="st">"actor"</span>, n <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="bipartite-two-mode-networks">Bipartite (two-mode) networks<a class="anchor" aria-label="anchor" href="#bipartite-two-mode-networks"></a>
+</h3>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">small_council</span><span class="op">)</span></span>
+<span><span class="va">fit_bip</span> <span class="op">=</span> <span class="fu"><a href="reference/srm.html">srm</a></span><span class="op">(</span><span class="va">small_council</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_bip</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="works-with-netify-objects">Works with netify objects<a class="anchor" aria-label="anchor" href="#works-with-netify-objects"></a>
+</h3>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://netify-dev.github.io/netify/" class="external-link">netify</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">atop_EA</span><span class="op">)</span></span>
 <span></span>
@@ -107,12 +157,122 @@
 <span></span>
 <span><span class="va">fit</span> <span class="op">=</span> <span class="fu"><a href="reference/srm.html">srm</a></span><span class="op">(</span><span class="va">net</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
-<p>See the vignettes for detailed examples: <code>srm-overview</code> (component-by-component walkthrough), <code>pipeline</code> (end-to-end analysis), <code>bipartite</code> (two-mode networks), and <code>methodology</code> (mathematical framework).</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="key-functions">Key Functions<a class="anchor" aria-label="anchor" href="#key-functions"></a>
+</h2>
+<table class="table">
+<colgroup>
+<col width="20%">
+<col width="34%">
+<col width="44%">
+</colgroup>
+<thead><tr class="header">
+<th>Task</th>
+<th>Function</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Fit SRM</td>
+<td><code><a href="reference/srm.html">srm()</a></code></td>
+<td>Decompose a network into actor, partner, and unique effects</td>
+</tr>
+<tr class="even">
+<td>Extract effects</td>
+<td><code><a href="reference/srm_effects.html">srm_effects()</a></code></td>
+<td>Get actor, partner, or unique effect matrices</td>
+</tr>
+<tr class="odd">
+<td>Variance components</td>
+<td><code><a href="reference/srm_stats.html">srm_stats()</a></code></td>
+<td>Compute specific variance/covariance statistics</td>
+</tr>
+<tr class="even">
+<td>Visualize</td>
+<td><code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code></td>
+<td>Actor/partner bar plots, dyadic heatmaps, variance partitions</td>
+</tr>
+<tr class="odd">
+<td>Permutation test</td>
+<td><code><a href="reference/permute_srm.html">permute_srm()</a></code></td>
+<td>Test significance of variance components</td>
+</tr>
+<tr class="even">
+<td>Longitudinal trends</td>
+<td><code><a href="reference/srm_trends.html">srm_trends()</a></code></td>
+<td>Extract effects as tidy data across time points</td>
+</tr>
+<tr class="odd">
+<td>Trend plots</td>
+<td><code><a href="reference/srm_trend_plot.html">srm_trend_plot()</a></code></td>
+<td>Visualize effect trajectories over time</td>
+</tr>
+<tr class="even">
+<td>Stability</td>
+<td><code><a href="reference/srm_stability.html">srm_stability()</a></code></td>
+<td>Inter-temporal correlations of effects</td>
+</tr>
+<tr class="odd">
+<td>Simulate</td>
+<td><code><a href="reference/sim_srm.html">sim_srm()</a></code></td>
+<td>Generate synthetic networks from known SRM parameters</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
+<h2 id="vignettes">Vignettes<a class="anchor" aria-label="anchor" href="#vignettes"></a>
+</h2>
+<ul>
+<li>
+<strong><a href="https://netify-dev.github.io/srm/articles/srm-overview.html">Getting Started</a></strong> — Component-by-component walkthrough</li>
+<li>
+<strong><a href="https://netify-dev.github.io/srm/articles/pipeline.html">The netify-srm Pipeline</a></strong> — End-to-end analysis from raw data to inference</li>
+<li>
+<strong><a href="https://netify-dev.github.io/srm/articles/bipartite.html">Bipartite Networks</a></strong> — Two-mode SRM analysis</li>
+<li>
+<strong><a href="https://netify-dev.github.io/srm/articles/methodology.html">Methodology</a></strong> — Mathematical framework and estimation details</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="getting-help">Getting Help<a class="anchor" aria-label="anchor" href="#getting-help"></a>
+</h2>
+<ul>
+<li>Browse vignettes: <code>browseVignettes("srm")</code>
+</li>
+<li>Function documentation: <code><a href="reference/srm.html">?srm</a></code>, <code><a href="reference/permute_srm.html">?permute_srm</a></code>, <code><a href="reference/sim_srm.html">?sim_srm</a></code>
+</li>
+<li>Report bugs: <a href="https://github.com/netify-dev/srm/issues" class="external-link">GitHub Issues</a>
+</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
+</h2>
+<p>If you use <code>srm</code> in your research, please cite:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"srm"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<p>Dorff, Cassy, and Michael D. Ward. (2013). Networks, Dyads, and the Social Relations Model. <em>Political Science Research Methods</em> 1(2):159-178.</p>
+<p>Dorff, Cassy, and Shahryar Minhas. (2017). When Do States Say Uncle? Network Dependence and Sanction Compliance. <em>International Interactions</em> 43(4):563-588.</p>
 </div>
 <div class="section level2">
 <h2 id="contributors">Contributors<a class="anchor" aria-label="anchor" href="#contributors"></a>
 </h2>
-<p>Cassy Dorff (Vanderbilt University), Shahryar Minhas (Michigan State University), Tosin Salau (Michigan State University)</p>
+<ul>
+<li>
+<strong>Cassy Dorff</strong> (Vanderbilt University)</li>
+<li>
+<strong>Shahryar Minhas</strong> (Michigan State University)</li>
+<li>
+<strong>Tosin Salau</strong> (Michigan State University)</li>
+</ul>
+<p>This work is supported by National Science Foundation Awards #2017162 and #2017180.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
