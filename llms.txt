@@ -1,0 +1,154 @@
+# srm
+
+## Overview
+
+The `srm` package provides tools for analyzing network data via the
+Social Relations Model. It decomposes networks into actor (sender),
+partner (receiver), and unique dyadic components, computes variance
+partitions and covariance structures, and supports permutation-based
+inference. Works with both cross-sectional and longitudinal networks,
+including bipartite designs. Part of the
+[netify](https://github.com/netify-dev/netify) ecosystem.
+
+## Installation
+
+``` r
+if (!require(devtools)) install.packages("devtools")
+devtools::install_github("netify-dev/srm")
+```
+
+## Usage
+
+``` r
+library(srm)
+
+# fit SRM to included classroom data
+data(classroom)
+fit = srm(classroom)
+fit
+summary(fit)
+
+# visualize
+plot(fit, type = "actor", n = 8)
+plot(fit, type = "variance")
+
+# permutation test
+pt = permute_srm(fit, n_perms = 500, seed = 6886)
+print(pt)
+```
+
+The package also works directly with `netify` objects:
+
+``` r
+library(netify)
+data(atop_EA)
+
+net = netify::netify(
+  input = atop_EA,
+  actor1 = "country1",
+  actor2 = "country2",
+  symmetric = TRUE,
+  sum_dyads = TRUE,
+  diag_to_NA = TRUE,
+  missing_to_zero = TRUE
+)
+
+fit = srm(net)
+summary(fit)
+```
+
+See the vignettes for detailed examples: `srm-overview`
+(component-by-component walkthrough), `pipeline` (end-to-end analysis),
+`bipartite` (two-mode networks), and `methodology` (mathematical
+framework).
+
+## Contributors
+
+Cassy Dorff (Vanderbilt University), Shahryar Minhas (Michigan State
+University), Tosin Salau (Michigan State University)
+
+# Package index
+
+## Model Fitting
+
+Fit Social Relations Models to network data
+
+- [`srm()`](https://netify-dev.github.io/srm/reference/srm.md) : Fit a
+  Social Relations Model to network data
+- [`srm_effects()`](https://netify-dev.github.io/srm/reference/srm_effects.md)
+  : Calculate SRM actor, partner, or unique effects
+- [`srm_stats()`](https://netify-dev.github.io/srm/reference/srm_stats.md)
+  : Calculate SRM summary statistics
+
+## S3 Methods
+
+Standard R methods for srm objects
+
+- [`print(`*`<srm>`*`)`](https://netify-dev.github.io/srm/reference/print.srm.md)
+  : Print an srm object
+- [`summary(`*`<srm>`*`)`](https://netify-dev.github.io/srm/reference/summary.srm.md)
+  : Summarize an srm object
+- [`print(`*`<summary.srm>`*`)`](https://netify-dev.github.io/srm/reference/print.summary.srm.md)
+  : Print a summary.srm object
+- [`plot(`*`<srm>`*`)`](https://netify-dev.github.io/srm/reference/plot.srm.md)
+  : Plot an srm object
+
+## Inference
+
+Permutation-based significance testing
+
+- [`permute_srm()`](https://netify-dev.github.io/srm/reference/permute_srm.md)
+  : Permutation test for SRM variance components
+- [`print(`*`<srm_permtest>`*`)`](https://netify-dev.github.io/srm/reference/print.srm_permtest.md)
+  : Print a permutation test result
+- [`plot(`*`<srm_permtest>`*`)`](https://netify-dev.github.io/srm/reference/plot.srm_permtest.md)
+  : Plot permutation test null distributions
+
+## Longitudinal Analysis
+
+Track effects over time
+
+- [`srm_trends()`](https://netify-dev.github.io/srm/reference/srm_trends.md)
+  : Track SRM effects over time
+- [`srm_trend_plot()`](https://netify-dev.github.io/srm/reference/srm_trend_plot.md)
+  : Plot SRM effects over time
+- [`srm_stability()`](https://netify-dev.github.io/srm/reference/srm_stability.md)
+  : Compute stability of effects across time
+
+## Visualization
+
+Additional plotting functions
+
+- [`srm_plot()`](https://netify-dev.github.io/srm/reference/srm_plot.md)
+  : Create plots for SRM actor, dyadic, partner effects
+
+## Simulation
+
+Generate synthetic network data
+
+- [`sim_srm()`](https://netify-dev.github.io/srm/reference/sim_srm.md) :
+  Simulate network data from a Social Relations Model
+
+## Datasets
+
+Example datasets
+
+- [`atop_EA`](https://netify-dev.github.io/srm/reference/atop_EA.md) :
+  East Asian consultation agreements from ATOP
+- [`classroom`](https://netify-dev.github.io/srm/reference/classroom.md)
+  : Simulated classroom friendship ratings
+- [`small_council`](https://netify-dev.github.io/srm/reference/small_council.md)
+  : Simulated Small Council pursuit data (bipartite)
+- [`trade_net`](https://netify-dev.github.io/srm/reference/trade_net.md)
+  : Simulated trade network (longitudinal)
+
+# Articles
+
+### Getting Started
+
+- [Social Relations Models for Network
+  Analysis](https://netify-dev.github.io/srm/articles/srm-overview.md):
+- [The netify-srm
+  Pipeline](https://netify-dev.github.io/srm/articles/pipeline.md):
+- [Bipartite Networks: Two-Mode SRM
+  Analysis](https://netify-dev.github.io/srm/articles/bipartite.md):
